@@ -23,7 +23,9 @@ window.I18N = {
     risk_high: "خطر عالٍ", reboot: "ريستارت",
     consent: "سيتم تشغيل سكربت تعطيل الحماية الخاص بك. متابعة؟",
     done_ok: "اكتمل التطبيق بنجاح", done_some: "اكتمل مع بعض الأخطاء",
-    failures_title: "التويكات التي فشلت:"
+    failures_title: "التويكات التي فشلت:",
+    archive_note: "حُفظ تقرير مفصّل على سطح المكتب.",
+    profile_label: "نمط سريع", prof_balanced: "متوازن", prof_gaming: "ألعاب", prof_custom: "مخصّص"
   },
   en: {
     steps: ["Welcome","Requirements","Tweaks","Review","Apply","Done"],
@@ -49,6 +51,8 @@ window.I18N = {
     risk_high: "high risk", reboot: "reboot",
     consent: "Your Defender-disable script will run. Continue?",
     done_ok: "Applied successfully", done_some: "Completed with some errors",
-    failures_title: "Tweaks that failed:"
+    failures_title: "Tweaks that failed:",
+    archive_note: "A detailed report was saved to your Desktop.",
+    profile_label: "Quick profile", prof_balanced: "Balanced", prof_gaming: "Gaming", prof_custom: "Custom"
   }
 };

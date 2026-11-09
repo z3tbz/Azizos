@@ -1,0 +1,6 @@
+/* Bundled offline — no network at runtime. */
+@font-face{font-family:"Rajdhani";font-weight:500;font-display:swap;src:url("fonts/rajdhani-500.woff2") format("woff2")}
+@font-face{font-family:"Rajdhani";font-weight:600;font-display:swap;src:url("fonts/rajdhani-600.woff2") format("woff2")}
+@font-face{font-family:"Rajdhani";font-weight:700;font-display:swap;src:url("fonts/rajdhani-700.woff2") format("woff2")}
+@font-face{font-family:"Orbitron";font-weight:700;font-display:swap;src:url("fonts/orbitron-700.woff2") format("woff2")}
+@font-face{font-family:"Orbitron";font-weight:800;font-display:swap;src:url("fonts/orbitron-800.woff2") format("woff2")}

@@ -28,7 +28,7 @@
       const v = T()[el.getAttribute("data-i18n")];
       if (v != null) el.textContent = v;
     });
-    renderStepper(); renderPreflight(); renderTweaks(); // re-render dynamic text
+    renderStepper(); renderPreflight(); renderTweaks(); wireProfiles(); // re-render dynamic text
   }
   document.getElementById("langBtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; applyLang(); };
   document.getElementById("themeBtn").onclick = () => {
@@ -124,6 +124,24 @@
   }
   async function loadAndRender(){ await loadRequirements(); renderPreflight(); }
 
+  // ---------- profiles (quick presets) ----------
+  // balanced = safe defaults (low risk). gaming = everything except high-risk
+  // (user still opts into Defender/UAC/etc. deliberately). custom = untouched.
+  function applyProfile(name) {
+    if (name === "custom") return;
+    selected.clear();
+    CAT.tweaks.forEach(t => {
+      if (name === "balanced" && (t.risk === "low") && t.default) selected.add(t.id);
+      if (name === "gaming" && t.risk !== "high") selected.add(t.id);
+    });
+    document.querySelectorAll(".prof").forEach(b =>
+      b.classList.toggle("on", b.dataset.prof === name));
+    renderTweaks();
+  }
+  function wireProfiles() {
+    document.querySelectorAll(".prof").forEach(b => b.onclick = () => applyProfile(b.dataset.prof));
+  }
+
   // ---------- tweaks ----------
   function renderTweaks() {
     const host = document.getElementById("catList");
@@ -179,14 +197,16 @@
     const bar = document.getElementById("progBar");
     const status = document.getElementById("statusLine");
     const log = document.getElementById("applyLog");
-    log.innerHTML = ""; bar.style.width = "0%";
+    const pct = document.getElementById("pct");
+    const setPct = p => { bar.style.width = p + "%"; pct.innerHTML = p + "<small>%</small>"; };
+    log.innerHTML = ""; setPct(0);
     const sel = CAT.tweaks.filter(t => selected.has(t.id));
 
     if (TAURI) {
       try {
         const ids = sel.map(t => t.id);
         lastReport = await invoke("run_plan", { selected: ids, dryRun: false });
-        bar.style.width = "100%"; return go("done");
+        setPct(100); return go("done");
       } catch (e) { status.textContent = String(e); }
       return;
     }
@@ -203,7 +223,7 @@
         (willFail ? T().r_failed : T().r_applied);
       log.appendChild(row); log.scrollTop = log.scrollHeight;
       willFail ? failed++ : applied += t.actions.length;
-      i++; bar.style.width = Math.round((i / sel.length) * 100) + "%";
+      i++; setPct(Math.round((i / sel.length) * 100));
       await new Promise(r => setTimeout(r, 180));
     }
     lastReport = {
@@ -225,7 +245,8 @@
         <div class="stat"><b>${lastReport ? lastReport.failed : 0}</b><span>${T().r_failed}</span></div>
       </div>
       ${fails.length ? `<div class="failbox"><b>${T().failures_title}</b>${
-        fails.map(f => `<div class="row">${f[0]} — ${f[2]}</div>`).join("")}</div>` : ""}`;
+        fails.map(f => `<div class="row">${f[0]} — ${f[2]}</div>`).join("")}</div>` : ""}
+      <p class="muted" style="margin-top:16px">${T().archive_note}</p>`;
   }
   // re-render done whenever we land on it
   const _go = go;

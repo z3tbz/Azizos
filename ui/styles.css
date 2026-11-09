@@ -7,6 +7,8 @@
   --text:#eceaf4; --muted:#8a85a6; --faint:#5a5578;
   --ok:#43d08f; --risk:#ff5470;
   --mono:"Consolas","SFMono-Regular",ui-monospace,monospace;
+  --display:"Orbitron","Rajdhani","Segoe UI",Tahoma,sans-serif;
+  --ui:"Rajdhani","Segoe UI",Tahoma,sans-serif;
   --cut:13px;
 }
 :root[data-theme="light"]{
@@ -44,7 +46,7 @@ body{
 
 .topbar{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;
   padding:15px 22px;border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:16px;letter-spacing:3px;text-transform:uppercase}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--display);font-weight:800;font-size:16px;letter-spacing:4px;text-transform:uppercase}
 .logo{width:32px;height:32px;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
 .top-actions{display:flex;gap:8px}
 .chip{font-family:var(--mono);background:transparent;color:var(--muted);border:1px solid var(--line2);
@@ -57,7 +59,7 @@ body{
 .side{width:226px;flex:0 0 auto;padding:26px 18px;border-inline-end:1px solid var(--line)}
 .stepper{display:flex;flex-direction:column;position:relative}
 .step{display:flex;align-items:center;gap:13px;padding:11px 6px;position:relative;
-  font-family:var(--mono);font-size:12.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint)}
+  font-family:var(--ui);font-weight:600;font-size:14px;letter-spacing:2px;text-transform:uppercase;color:var(--faint);transition:color .2s}
 .step .num{width:28px;height:28px;flex:0 0 auto;display:grid;place-items:center;font-size:12px;font-weight:700;
   background:var(--panel);border:1px solid var(--line2);color:var(--muted);
   clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))}
@@ -73,7 +75,7 @@ main{flex:1;min-width:0;display:flex;flex-direction:column}
 .screen{flex:1;display:flex;flex-direction:column;min-height:0}
 .screen[hidden]{display:none}
 .content{flex:1;overflow:auto;padding:30px 34px}
-.content h1{font-size:27px;font-weight:800;margin:0 0 7px;letter-spacing:.2px;display:flex;align-items:center;gap:12px}
+.content h1{font-family:var(--display);font-size:26px;font-weight:800;margin:0 0 7px;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:12px}
 .content h1::before{content:"/";color:var(--gold);font-weight:800}
 .muted{color:var(--muted);margin:0}
 .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--purple2);margin-bottom:10px}
@@ -81,8 +83,8 @@ main{flex:1;min-width:0;display:flex;flex-direction:column}
 /* footer nav bar */
 .navbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
   padding:15px 34px;border-top:1px solid var(--line)}
-button.primary,button.ghost{font-family:var(--mono);font-weight:700;letter-spacing:2px;text-transform:uppercase;
-  font-size:13px;padding:12px 28px;cursor:pointer;transition:.16s;border:1px solid}
+button.primary,button.ghost{font-family:var(--ui);font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+  font-size:14px;padding:12px 30px;cursor:pointer;transition:.16s;border:1px solid}
 button.primary{background:var(--gold);color:#241a02;border-color:var(--gold);
   clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px))}
 button.primary:hover{background:var(--gold2);box-shadow:0 0 22px rgba(246,182,30,.4)}
@@ -113,7 +115,7 @@ button.ghost:hover{color:var(--text);border-color:var(--text)}
 
 /* tweaks */
 .catlist{display:grid;gap:22px;margin-top:22px}
-.cat h2{font-family:var(--mono);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:0 0 12px;
+.cat h2{font-family:var(--ui);font-weight:700;font-size:14px;letter-spacing:3px;text-transform:uppercase;margin:0 0 12px;
   color:var(--gold);display:flex;align-items:center;gap:12px}
 .cat h2::before{content:"";width:12px;height:12px;background:var(--gold);transform:rotate(45deg);flex:0 0 auto}
 .cat h2::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -123,7 +125,7 @@ button.ghost:hover{color:var(--text);border-color:var(--text)}
 .tweak input{margin-top:3px;width:17px;height:17px;accent-color:var(--gold)}
 .tweak .meta{flex:1}.tweak .name{font-weight:600;letter-spacing:.2px}
 .tweak .desc{color:var(--muted);font-size:13px}
-.badge{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;
+.badge{font-family:var(--ui);font-weight:600;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
   padding:2px 8px;margin-inline-start:8px;vertical-align:middle;border:1px solid}
 .badge.high{color:var(--risk);border-color:var(--risk)}
 .badge.medium{color:var(--gold);border-color:var(--gold)}
@@ -133,7 +135,7 @@ button.ghost:hover{color:var(--text);border-color:var(--text)}
 .sum{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
 .stat{background:var(--panel);border:1px solid var(--line);padding:16px 22px;min-width:120px;
   clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
-.stat b{font-size:30px;display:block;color:var(--gold);font-variant-numeric:tabular-nums}
+.stat b{font-family:var(--display);font-size:30px;display:block;color:var(--gold);font-variant-numeric:tabular-nums}
 .stat span{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
 .rvlist{columns:2;gap:16px}@media(max-width:620px){.rvlist{columns:1}}
 .rvlist div{break-inside:avoid;padding:3px 0;color:var(--muted);font-size:13px}
@@ -155,3 +157,84 @@ button.ghost:hover{color:var(--text);border-color:var(--text)}
 .failbox{background:var(--panel);border:1px solid var(--line);padding:12px 15px;margin-top:16px;
   max-height:210px;overflow:auto;font-family:var(--mono);font-size:12.5px;text-align:start}
 .failbox .row{color:var(--risk);padding:3px 0}
+
+/* ============ MOTION ============ */
+@media (prefers-reduced-motion: no-preference){
+
+  /* window boots in with a clipped reveal */
+  .window{animation:winIn .6s cubic-bezier(.16,.84,.3,1) both}
+  @keyframes winIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+
+  /* each screen's content slides + fades in on every navigation */
+  .screen:not([hidden]) .content{animation:screenIn .5s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes screenIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+  [dir="rtl"] .screen:not([hidden]) .content{animation-name:screenInRtl}
+  @keyframes screenInRtl{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+
+  /* heading slash flickers to life */
+  .screen:not([hidden]) .content h1::before{animation:flick .9s steps(1) both}
+  @keyframes flick{0%,40%{opacity:0}45%,55%{opacity:1}60%{opacity:.3}100%{opacity:1}}
+
+  /* staggered row entrances */
+  .screen:not([hidden]) .bullets li,
+  .screen:not([hidden]) .reqlist .req,
+  .screen:not([hidden]) .catlist .tweak,
+  .screen:not([hidden]) .sum .stat{animation:rowIn .5s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes rowIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .content > * .req:nth-child(1),.catlist .tweak:nth-child(1){animation-delay:.05s}
+  .bullets li:nth-child(2),.reqlist .req:nth-child(2),.catlist .tweak:nth-child(2){animation-delay:.1s}
+  .bullets li:nth-child(3),.reqlist .req:nth-child(3),.catlist .tweak:nth-child(3){animation-delay:.16s}
+  .catlist .tweak:nth-child(4){animation-delay:.22s}
+
+  /* active step: breathing glow */
+  .step.active .num{animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 1px var(--gold),0 0 10px rgba(246,182,30,.25)}
+    50%{box-shadow:0 0 0 1px var(--gold),0 0 20px rgba(246,182,30,.6)}}
+
+  /* logo float + glow */
+  .logo{animation:float 4s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+  /* header scanline travelling down the diagonal hairline */
+  .window::before{animation:scan 5s linear infinite}
+  @keyframes scan{0%{transform:rotate(22deg) translateY(-30%);opacity:0}
+    10%{opacity:.5}90%{opacity:.5}100%{transform:rotate(22deg) translateY(30%);opacity:0}}
+
+  /* progress stripes march */
+  .progbar{background-size:28px 28px;animation:march .6s linear infinite}
+  @keyframes march{from{background-position:0 0}to{background-position:28px 0}}
+
+  /* status dots pulse */
+  .req.pass .dot,.req.fail .dot{animation:dot 1.8s ease-in-out infinite}
+  @keyframes dot{0%,100%{transform:rotate(45deg) scale(1)}50%{transform:rotate(45deg) scale(1.25)}}
+
+  /* apply log rows type in */
+  .applylog .row{animation:logIn .25s ease-out both}
+  @keyframes logIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+
+  /* done tick pops */
+  #doneBody .big{animation:pop .6s cubic-bezier(.2,1.4,.4,1) both}
+  @keyframes pop{from{opacity:0;transform:scale(.4) rotate(-12deg)}to{opacity:1;transform:none}}
+
+  /* buttons lift on hover */
+  button.primary,button.ghost{will-change:transform}
+  button.primary:hover,button.ghost:hover{transform:translateY(-2px)}
+  button.primary:active,button.ghost:active{transform:translateY(0)}
+  .tweak,.req,.chip{will-change:transform}
+  .tweak:hover{transform:translateX(2px)}
+  [dir="rtl"] .tweak:hover{transform:translateX(-2px)}
+}
+
+/* profiles quick-select */
+.profiles{display:flex;align-items:center;gap:10px;margin-top:20px;flex-wrap:wrap}
+.profiles .eyebrow{margin:0;margin-inline-end:4px}
+.prof{font-family:var(--ui);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;font-size:12.5px;
+  padding:7px 16px;background:var(--panel);color:var(--muted);border:1px solid var(--line2);cursor:pointer;
+  clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px));transition:.15s}
+.prof:hover{color:var(--text);border-color:var(--text)}
+.prof.on{background:var(--gold);color:#241a02;border-color:var(--gold);box-shadow:0 0 16px rgba(246,182,30,.35)}
+
+/* big apply percentage */
+.pct{font-family:var(--display);font-weight:800;font-size:66px;line-height:1;margin:14px 0 2px;
+  color:var(--gold);letter-spacing:1px;font-variant-numeric:tabular-nums}
+.pct small{font-size:26px;color:var(--muted);margin-inline-start:4px}

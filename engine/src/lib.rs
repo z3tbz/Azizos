@@ -11,6 +11,10 @@
 
 pub mod schema;
 pub mod catalog;
+pub mod exec;
+pub mod detect;
 
 pub use schema::{Action, Check, Compat, Device, Disk, Gpu, Hive, Risk, Tweak};
-pub use catalog::{Catalog, PlanError, SystemProfile};
+pub use catalog::{Catalog, Plan, PlanError, SystemProfile};
+pub use exec::{Backend, Phase, Report, Status};
+pub use detect::{check_requirements, Detector, Met, Remedy, Requirement, RequirementStatus};

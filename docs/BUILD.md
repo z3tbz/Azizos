@@ -36,11 +36,17 @@ cargo build --release # يبني المحرّك (بايناري صغير)
 
 ## 4. بناء التطبيق بالواجهة
 
+التطبيق في `app/` (Tauri) والواجهة في `ui/` (HTML/JS). للمعاينة بدون بناء:
+`powershell -File scripts/serve-ui.ps1` ثم افتح <http://localhost:8777/>.
+
+البناء الكامل:
 ```bash
-cd ui
-npm install
-cargo tauri build     # يطلّع Azizos.exe مثبّت واحد
+cd app
+cargo tauri build     # يطلّع Azizos مثبّت واحد (NSIS)
 ```
+- الرفع للصلاحيات (requireAdministrator): أضف manifest للتطبيق أو فعّل التثبيت
+  perMachine (مضبوط في `tauri.conf.json`).
+- أضف أيقونة في `app/icons/icon.ico`.
 
 ## 5. التوقيع الرقمي (ضد الانتحال)
 

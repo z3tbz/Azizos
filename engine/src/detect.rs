@@ -6,10 +6,11 @@
 //! evaluation logic here is pure and testable. See `docs/DETECTION.md`.
 
 use crate::catalog::SystemProfile;
+use serde::Serialize;
 
 /// The gates that must pass before the playbook can apply cleanly.
 /// (No `Internet` — the app is fully self-contained; nothing is downloaded.)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum Requirement {
     /// Defender real-time protection is off / manageable.
     DefenderToggled,
@@ -59,7 +60,7 @@ pub enum Remedy {
     UserAction,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum Met {
     Pass,
     Fail,
@@ -67,7 +68,7 @@ pub enum Met {
     NotApplicable,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RequirementStatus {
     pub requirement: Requirement,
     pub met: Met,

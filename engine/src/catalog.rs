@@ -5,7 +5,7 @@ use crate::schema::{Action, Tweak};
 use std::collections::{HashMap, HashSet};
 
 /// What `detect` (Windows side) fills in; here it is just data used for gating.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct SystemProfile {
     pub build: u32,
     pub edition: String, // "pro" | "ltsc" | "iot" | ...

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Azizos</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">A</span> Azizos</div>
+  <div class="top-actions">
+    <button id="langBtn" class="chip" title="Language">EN</button>
+    <button id="themeBtn" class="chip" title="Theme">◐</button>
+  </div>
+</header>
+
+<nav class="stepper" id="stepper"></nav>
+
+<main id="app">
+  <!-- Welcome -->
+  <section class="screen" data-screen="welcome">
+    <h1 data-i18n="welcome_title"></h1>
+    <p class="muted" data-i18n="welcome_sub"></p>
+    <ul class="bullets">
+      <li><b data-i18n="b1_t"></b><span data-i18n="b1_d"></span></li>
+      <li><b data-i18n="b2_t"></b><span data-i18n="b2_d"></span></li>
+      <li><b data-i18n="b3_t"></b><span data-i18n="b3_d"></span></li>
+    </ul>
+    <div class="actions">
+      <button class="primary" data-next="preflight" data-i18n="start"></button>
+    </div>
+  </section>
+
+  <!-- Pre-flight -->
+  <section class="screen" data-screen="preflight" hidden>
+    <h1 data-i18n="pre_title"></h1>
+    <p class="muted" data-i18n="pre_sub"></p>
+    <div id="reqList" class="reqlist"></div>
+    <div class="actions">
+      <button class="ghost" data-next="welcome" data-i18n="back"></button>
+      <button class="primary" id="preNext" data-next="tweaks" data-i18n="next"></button>
+    </div>
+  </section>
+
+  <!-- Tweaks -->
+  <section class="screen" data-screen="tweaks" hidden>
+    <h1 data-i18n="tw_title"></h1>
+    <p class="muted" data-i18n="tw_sub"></p>
+    <div id="catList" class="catlist"></div>
+    <div class="actions">
+      <button class="ghost" data-next="preflight" data-i18n="back"></button>
+      <button class="primary" data-next="review" data-i18n="next"></button>
+    </div>
+  </section>
+
+  <!-- Review -->
+  <section class="screen" data-screen="review" hidden>
+    <h1 data-i18n="rv_title"></h1>
+    <div id="reviewBody"></div>
+    <label class="switchrow">
+      <input type="checkbox" id="autoRestart" checked />
+      <span data-i18n="auto_restart"></span>
+    </label>
+    <div class="actions">
+      <button class="ghost" data-next="tweaks" data-i18n="back"></button>
+      <button class="primary" data-next="apply" id="applyBtn" data-i18n="apply"></button>
+    </div>
+  </section>
+
+  <!-- Apply -->
+  <section class="screen" data-screen="apply" hidden>
+    <h1 data-i18n="ap_title"></h1>
+    <div class="progwrap"><div class="progbar" id="progBar"></div></div>
+    <div class="statusline" id="statusLine"></div>
+    <div id="applyLog" class="applylog"></div>
+  </section>
+
+  <!-- Done -->
+  <section class="screen" data-screen="done" hidden>
+    <h1 data-i18n="dn_title"></h1>
+    <div id="doneBody"></div>
+    <div class="actions">
+      <button class="primary" id="finishBtn" data-i18n="finish"></button>
+    </div>
+  </section>
+</main>
+
+<script src="catalog.js"></script>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

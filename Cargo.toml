@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = ["engine", "app"]
+
+# `cargo test -p azizos-engine` runs the pure-core tests anywhere.
+# `cargo tauri build` (in app/) produces the Windows installer.

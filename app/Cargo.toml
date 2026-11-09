@@ -1,0 +1,17 @@
+[package]
+name = "azizos-app"
+version = "0.1.0"
+edition = "2021"
+description = "Azizos — Windows 10/11 tweak applicator"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+azizos-engine = { path = "../engine" }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

@@ -276,6 +276,12 @@
                         "args":  "/c xcopy  \"PostInstall\" \"C:\\PostInstall\" /E /I /H /Y"
                     },
                     {
+                        "type":  "bundled",
+                        "file":  "defaultservices.bat",
+                        "args":  null,
+                        "runas":  "user_elevated"
+                    },
+                    {
                         "type":  "registry",
                         "op":  "set",
                         "hive":  "hkcu",

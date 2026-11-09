@@ -215,6 +215,22 @@ pub enum Action {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         guid: Option<String>,
     },
+    /// Run a script/executable shipped *inside* the app (embedded asset), not a
+    /// system tool. The executor picks the interpreter from the extension
+    /// (.ps1 → PowerShell, .bat/.cmd → cmd, .exe → direct).
+    Bundled {
+        file: String,
+        #[serde(default)]
+        args: String,
+        #[serde(default = "Action::ps_user")]
+        runas: String,
+    },
+    /// Run a bundled installer silently (shipped offline — no download).
+    Installer {
+        file: String,
+        #[serde(default)]
+        args: String,
+    },
     Env {
         name: String,
         data: String,
@@ -250,6 +266,9 @@ impl Action {
                 | Action::Powerplan { .. }
                 | Action::Device { .. }
                 | Action::Powershell { .. }
+                | Action::Bundled { .. }
+                | Action::Installer { .. }
+                | Action::Command { .. }
         )
     }
 }

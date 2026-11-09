@@ -1,0 +1,21 @@
+{
+    "id":  "7zip",
+    "name":  {
+                 "ar":  "7-Zip",
+                 "en":  "7-Zip"
+             },
+    "category":  "performance",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  false,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "installer",
+                        "file":  "7zip",
+                        "args":  ""
+                    }
+                ]
+}

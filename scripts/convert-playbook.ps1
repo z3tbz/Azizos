@@ -47,7 +47,9 @@ function Map-Startup([string]$n) {
   switch ($n.Trim()) { '0'{'boot'} '1'{'system'} '2'{'auto'} '3'{'demand'} '4'{'disabled'} default{'disabled'} }
 }
 function Get-Field([string]$body, [string]$key) {
-  $m = [regex]::Match($body, "(?:^|[,{]\s*)$key\s*:\s*(?:'([^']*)'|""([^""]*)""|([^,}]+))")
+  # keys are separated by commas/braces (inline) OR whitespace (gathered multi-line);
+  # unquoted values stop at the next separator so one key never swallows the next.
+  $m = [regex]::Match($body, "(?:^|[\s,{])$key\s*:\s*(?:'([^']*)'|""([^""]*)""|([^,}\s]+))")
   if (-not $m.Success) { return $null }
   foreach ($g in 1..3) { if ($m.Groups[$g].Success) { return $m.Groups[$g].Value.Trim() } }
   return $null
@@ -126,8 +128,36 @@ foreach ($f in $cfgFiles) {
       'powerShell' {
         $scr = Get-Field $body 'command'; $ru = Get-Field $body 'runas'
         $runas = if ($ru -match 'rusted') {'trusted_installer'} else {'user_elevated'}
-        if ($scr) { Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='powershell'; script=$scr; runas=$runas }) }
+        if (-not $scr) { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}); break }
+        if ($scr -match '^\.[\\/](.+)$') {
+          Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='bundled'; file=$Matches[1]; runas=$runas })
+        } else {
+          Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='powershell'; script=$scr; runas=$runas })
+        }
+      }
+      'run' {
+        $exe = Get-Field $body 'exe'; $a = Get-Field $body 'args'; $ed = Get-Field $body 'exeDir'
+        $ru = Get-Field $body 'runas'; $runas = if ($ru -match 'rusted') {'trusted_installer'} else {'user_elevated'}
+        $sysExe = @('dism.exe','dism','fsutil','label','rundll32.exe','cmd.exe','reg.exe','reg','powercfg','powercfg.exe','sc.exe','sc')
+        if (-not $exe) { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}); break }
+        if ($exe -match '^bcdedit(\.exe)?$') {
+          Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='bcd'; args=$a })
+        } elseif ($sysExe -contains $exe.ToLower()) {
+          Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='command'; exe=$exe; args=$a })
+        } elseif ($ed -eq 'true' -or $exe -match '\.(bat|cmd|ps1|exe)$') {
+          Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='bundled'; file=$exe; args=$a; runas=$runas })
+        } else {
+          Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='command'; exe=$exe; args=$a })
+        }
+      }
+      'download' {
+        $dest = Get-Field $body 'destination'
+        if ($dest) { Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='installer'; file=$dest; args='' }) }
         else { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}) }
+      }
+      'software' {
+        $pkg = Get-Field $body 'package'; if (-not $pkg) { $pkg = Get-Field $body 'name' }
+        Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='installer'; file=$pkg; args='' })
       }
       default { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}) }
     }

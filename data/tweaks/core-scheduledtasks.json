@@ -1,0 +1,22 @@
+{
+    "id":  "core-scheduledtasks",
+    "name":  {
+                 "ar":  "أساسي — scheduledtasks",
+                 "en":  "Core — scheduledtasks"
+             },
+    "category":  "performance",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  false,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "bundled",
+                        "file":  "ScheduledTasksDisabler.exe",
+                        "args":  null,
+                        "runas":  "user_elevated"
+                    }
+                ]
+}

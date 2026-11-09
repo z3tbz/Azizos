@@ -13,6 +13,17 @@
     "risk":  "high",
     "actions":  [
                     {
+                        "type":  "bundled",
+                        "file":  "DisableDefender.ps1",
+                        "runas":  "user_elevated"
+                    },
+                    {
+                        "type":  "bundled",
+                        "file":  "DisableDefenderServices.bat",
+                        "args":  null,
+                        "runas":  "user_elevated"
+                    },
+                    {
                         "type":  "registry",
                         "op":  "set",
                         "hive":  "hkcu",

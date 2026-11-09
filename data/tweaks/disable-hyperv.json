@@ -9,9 +9,21 @@
 
                  ],
     "default":  false,
-    "requires_reboot":  false,
+    "requires_reboot":  true,
     "risk":  "medium",
     "actions":  [
+                    {
+                        "type":  "bcd",
+                        "args":  "/set {current} hypervisorlaunchtype off"
+                    },
+                    {
+                        "type":  "bcd",
+                        "args":  "/set {current} vm off"
+                    },
+                    {
+                        "type":  "bcd",
+                        "args":  "/set {current} vsmlaunchtype off"
+                    },
                     {
                         "type":  "registry",
                         "op":  "set",

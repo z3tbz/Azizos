@@ -13,6 +13,12 @@
     "risk":  "medium",
     "actions":  [
                     {
+                        "type":  "bundled",
+                        "file":  "filters.bat",
+                        "args":  null,
+                        "runas":  "user_elevated"
+                    },
+                    {
                         "type":  "service",
                         "name":  "AppVClient",
                         "op":  "change",
@@ -965,6 +971,18 @@
                         "name":  "WpcMonSvc",
                         "op":  "change",
                         "startup":  "disabled"
+                    },
+                    {
+                        "type":  "bundled",
+                        "file":  "Azizosservices.bat",
+                        "args":  null,
+                        "runas":  "user_elevated"
+                    },
+                    {
+                        "type":  "bundled",
+                        "file":  "LaptopCheck.bat",
+                        "args":  null,
+                        "runas":  "user_elevated"
                     },
                     {
                         "type":  "registry",

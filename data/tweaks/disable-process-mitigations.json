@@ -1,0 +1,22 @@
+{
+    "id":  "disable-process-mitigations",
+    "name":  {
+                 "ar":  "تعطيل تخفيفات العمليات",
+                 "en":  "Disable Process Mitigations"
+             },
+    "category":  "security",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  false,
+    "risk":  "high",
+    "actions":  [
+                    {
+                        "type":  "bundled",
+                        "file":  "disable-process-mitigations.bat",
+                        "args":  null,
+                        "runas":  "user_elevated"
+                    }
+                ]
+}

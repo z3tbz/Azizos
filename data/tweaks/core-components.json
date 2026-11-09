@@ -41,6 +41,11 @@
                         "type":  "file",
                         "op":  "delete",
                         "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\Defragment and Optimize Drives.lnk"
+                    },
+                    {
+                        "type":  "powershell",
+                        "script":  "set-executionpolicy unrestricted -force",
+                        "runas":  "user_elevated"
                     }
                 ]
 }

@@ -37,6 +37,11 @@
                         "type":  "service",
                         "name":  "OneSyncSvc*",
                         "op":  "delete"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "cmd.exe",
+                        "args":  "/c for %a in (\"SysWOW64\" \"System32\") do (if exist \"%windir%\\%~a\\OneDriveSetup.exe\" (\"%windir%\\%~a\\OneDriveSetup.exe\" /uninstall)) \u0026\u0026 reg delete \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}\" /f \u003e nul 2\u003e\u00261"
                     }
                 ]
 }

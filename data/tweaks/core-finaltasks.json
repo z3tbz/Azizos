@@ -42,9 +42,20 @@
                         "runas":  "user_elevated"
                     },
                     {
+                        "type":  "bundled",
+                        "file":  "powerplan.bat",
+                        "args":  null,
+                        "runas":  "user_elevated"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "DISM.exe",
+                        "args":  "/Online /set-reservedstoragestate /state:disabled"
+                    },
+                    {
                         "type":  "file",
                         "op":  "delete",
-                        "path":  null
+                        "path":  "%SystemDrive%\\\\Windows\\\\System32\\\\OneDriveSetup.exe"
                     },
                     {
                         "type":  "powershell",

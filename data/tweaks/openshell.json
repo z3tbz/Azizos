@@ -23,6 +23,11 @@
                         "args":  "/c ren %WINDIR%\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\SearchHost.exe SearchHost.old"
                     },
                     {
+                        "type":  "installer",
+                        "file":  "OpenShell.exe",
+                        "args":  ""
+                    },
+                    {
                         "type":  "command",
                         "exe":  "cmd",
                         "args":  "/c OpenShell.exe /qn ADDLOCAL=StartMenu"

@@ -40,10 +40,12 @@
   function renderStepper() {
     const nav = document.getElementById("stepper");
     nav.innerHTML = "";
+    const ci = STEPS.indexOf(current);
     STEPS.forEach((s, i) => {
+      const done = ci > i;
       const d = document.createElement("div");
-      d.className = "step" + (s === current ? " active" : (STEPS.indexOf(current) > i ? " done" : ""));
-      d.textContent = (i + 1) + ". " + T().steps[i];
+      d.className = "step" + (s === current ? " active" : (done ? " done" : ""));
+      d.innerHTML = `<span class="num">${done ? "✓" : (i + 1)}</span><span>${T().steps[i]}</span>`;
       nav.appendChild(d);
     });
   }
@@ -164,9 +166,9 @@
     const reboot = sel.filter(t => t.requires_reboot).length;
     const body = document.getElementById("reviewBody");
     body.innerHTML = `<div class="sum">
-      <div class="stat"><b>${sel.length}</b>${T().sel_count}</div>
-      <div class="stat"><b>${actions}</b>${T().act_count}</div>
-      <div class="stat"><b>${reboot}</b>${T().reboot_needed}</div>
+      <div class="stat"><b>${sel.length}</b><span>${T().sel_count}</span></div>
+      <div class="stat"><b>${actions}</b><span>${T().act_count}</span></div>
+      <div class="stat"><b>${reboot}</b><span>${T().reboot_needed}</span></div>
     </div>
     <div class="rvlist">${sel.map(t => `<div>• ${(t.name&&t.name[lang])||t.id}</div>`).join("")}</div>`;
   }
@@ -218,9 +220,9 @@
     const fails = (lastReport && lastReport.failures) || [];
     body.innerHTML = `<div class="big">${ok ? "✅" : "⚠️"}</div>
       <p>${ok ? T().done_ok : T().done_some}</p>
-      <div class="sum">
-        <div class="stat"><b>${lastReport ? lastReport.applied : 0}</b>${T().r_applied}</div>
-        <div class="stat"><b>${lastReport ? lastReport.failed : 0}</b>${T().r_failed}</div>
+      <div class="sum" style="justify-content:center">
+        <div class="stat"><b>${lastReport ? lastReport.applied : 0}</b><span>${T().r_applied}</span></div>
+        <div class="stat"><b>${lastReport ? lastReport.failed : 0}</b><span>${T().r_failed}</span></div>
       </div>
       ${fails.length ? `<div class="failbox"><b>${T().failures_title}</b>${
         fails.map(f => `<div class="row">${f[0]} — ${f[2]}</div>`).join("")}</div>` : ""}`;

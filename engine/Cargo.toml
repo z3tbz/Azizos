@@ -1,0 +1,29 @@
+[package]
+name = "azizos-engine"
+version = "0.1.0"
+edition = "2021"
+description = "Azizos tweak engine (declarative, resilient, Windows 10/11)"
+
+[lib]
+name = "azizos_engine"
+path = "src/lib.rs"
+
+[[bin]]
+name = "azizos-cli"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(windows)'.dependencies]
+# Windows API surface (added as the engine's action executors land):
+# windows        = { version = "0.58", features = [ ... ] }
+# windows-registry = "0.2"
+
+[profile.release]
+opt-level = "z"     # small binary
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

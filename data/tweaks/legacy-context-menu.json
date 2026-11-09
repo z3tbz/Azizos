@@ -1,0 +1,24 @@
+{
+  "id": "legacy-context-menu",
+  "name": { "ar": "قائمة السياق الكلاسيكية", "en": "Legacy Context Menu" },
+  "description": {
+    "ar": "إرجاع قائمة الزر الأيمن الكاملة في ويندوز 11 بدل القائمة المختصرة.",
+    "en": "Restore the full right-click menu on Windows 11 instead of the compact one."
+  },
+  "category": "appearance",
+  "profiles": [],
+  "default": false,
+  "requires_reboot": true,
+  "risk": "low",
+  "compat": { "builds": { "min": 22000, "max": 26300 } },
+  "actions": [
+    { "type": "registry", "op": "set", "hive": "HKCU",
+      "path": "Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32",
+      "name": "", "kind": "sz", "data": "" }
+  ],
+  "verify": [
+    { "type": "registry", "hive": "HKCU",
+      "path": "Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32",
+      "name": "", "equals": "" }
+  ]
+}

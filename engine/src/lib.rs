@@ -14,6 +14,16 @@ pub mod catalog;
 pub mod exec;
 pub mod detect;
 
+#[cfg(windows)]
+pub mod exec_windows;
+#[cfg(windows)]
+pub mod detect_windows;
+
+#[cfg(windows)]
+pub use exec_windows::WindowsBackend;
+#[cfg(windows)]
+pub use detect_windows::WindowsDetector;
+
 pub use schema::{Action, Check, Compat, Device, Disk, Gpu, Hive, Risk, Tweak};
 pub use catalog::{Catalog, Plan, PlanError, SystemProfile};
 pub use exec::{Backend, Phase, Report, Status};

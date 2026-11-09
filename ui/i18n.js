@@ -25,6 +25,9 @@ window.I18N = {
     done_ok: "اكتمل التطبيق بنجاح", done_some: "اكتمل مع بعض الأخطاء",
     failures_title: "التويكات التي فشلت:",
     archive_note: "حُفظ تقرير مفصّل على سطح المكتب.",
+    recheck: "إعادة الفحص", fix_unavailable: "ما فيه إصلاح تلقائي مضمّن — بنفتح لك إعدادات الحماية تسويها بنفسك.",
+    finish_manual: "تم. AZIZ Gaming Optimizer بيفتح تلقائياً بعد ما تعيد التشغيل.",
+    finish_manual_no_opt: "تم. أعد تشغيل الجهاز لتكتمل التغييرات.",
     profile_label: "نمط سريع", prof_balanced: "متوازن", prof_gaming: "ألعاب", prof_custom: "مخصّص"
   },
   en: {
@@ -53,6 +56,9 @@ window.I18N = {
     done_ok: "Applied successfully", done_some: "Completed with some errors",
     failures_title: "Tweaks that failed:",
     archive_note: "A detailed report was saved to your Desktop.",
+    recheck: "Re-check", fix_unavailable: "No automatic fix is bundled — opening Windows Security so you can do it yourself.",
+    finish_manual: "Done. AZIZ Gaming Optimizer will open automatically after you restart.",
+    finish_manual_no_opt: "Done. Restart your PC to complete the changes.",
     profile_label: "Quick profile", prof_balanced: "Balanced", prof_gaming: "Gaming", prof_custom: "Custom"
   }
 };

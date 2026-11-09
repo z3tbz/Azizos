@@ -12,6 +12,8 @@ use serde::Serialize;
 /// (No `Internet` — the app is fully self-contained; nothing is downloaded.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum Requirement {
+    /// Windows 10/11 build inside the supported window (AME `SupportedBuilds`).
+    SupportedBuild,
     /// Defender real-time protection is off / manageable.
     DefenderToggled,
     /// No third-party antivirus is registered with Security Center.
@@ -21,7 +23,8 @@ pub enum Requirement {
 }
 
 impl Requirement {
-    pub const ALL: [Requirement; 3] = [
+    pub const ALL: [Requirement; 4] = [
+        Requirement::SupportedBuild,
         Requirement::DefenderToggled,
         Requirement::NoThirdPartyAv,
         Requirement::PluggedIn,
@@ -30,6 +33,7 @@ impl Requirement {
     pub fn title(&self, lang: &str) -> &'static str {
         let ar = lang.starts_with("ar");
         match self {
+            Requirement::SupportedBuild => if ar { "إصدار ويندوز مدعوم" } else { "Supported Windows build" },
             Requirement::DefenderToggled => if ar { "حماية Defender اللحظية" } else { "Defender real-time protection" },
             Requirement::NoThirdPartyAv => if ar { "لا يوجد مضاد فيروسات آخر" } else { "No third-party antivirus" },
             Requirement::PluggedIn => if ar { "موصول بالشاحن" } else { "On AC power" },
@@ -39,6 +43,7 @@ impl Requirement {
     /// How the UI should offer to fix a failing requirement.
     pub fn remedy(&self) -> Remedy {
         match self {
+            Requirement::SupportedBuild => Remedy::UserAction,
             // Runs the author's own Defender script behind an explicit consent gate,
             // or opens Windows Security for the user to toggle it by hand.
             Requirement::DefenderToggled => Remedy::ConsentScriptOrManual {
@@ -87,6 +92,21 @@ pub trait Detector {
 /// Evaluate every requirement into a status list for the pre-flight screen.
 pub fn check_requirements<D: Detector>(d: &D) -> Vec<RequirementStatus> {
     let mut out = Vec::new();
+
+    let range = crate::schema::BuildRange::default();
+    out.push(match d.profile() {
+        Ok(p) if range.contains(p.build) => RequirementStatus {
+            requirement: Requirement::SupportedBuild,
+            met: Met::Pass,
+            detail: Some(format!("build {}", p.build)),
+        },
+        Ok(p) => RequirementStatus {
+            requirement: Requirement::SupportedBuild,
+            met: Met::Fail,
+            detail: Some(format!("build {} (supported {}–{})", p.build, range.min, range.max)),
+        },
+        Err(e) => RequirementStatus { requirement: Requirement::SupportedBuild, met: Met::Fail, detail: Some(e) },
+    });
 
     out.push(match d.defender_realtime_on() {
         Ok(true) => RequirementStatus {
@@ -191,8 +211,9 @@ mod tests {
         let m = Mock { rt: true, av: vec![], ac: Some(false) };
         let s = check_requirements(&m);
         assert!(!all_satisfied(&s));
-        assert_eq!(s[0].met, Met::Fail); // defender
-        assert_eq!(s[2].met, Met::Fail); // battery
+        assert_eq!(s[0].met, Met::Pass); // build 26100 supported
+        assert_eq!(s[1].met, Met::Fail); // defender
+        assert_eq!(s[3].met, Met::Fail); // battery
     }
 
     #[test]
@@ -200,14 +221,14 @@ mod tests {
         let m = Mock { rt: false, av: vec![], ac: None };
         let s = check_requirements(&m);
         assert!(all_satisfied(&s));
-        assert_eq!(s[2].met, Met::NotApplicable);
+        assert_eq!(s[3].met, Met::NotApplicable);
     }
 
     #[test]
     fn flags_third_party_av() {
         let m = Mock { rt: false, av: vec!["Kaspersky".into()], ac: Some(true) };
         let s = check_requirements(&m);
-        assert_eq!(s[1].met, Met::Fail);
+        assert_eq!(s[2].met, Met::Fail);
         assert!(!all_satisfied(&s));
     }
 }

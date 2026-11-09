@@ -15,12 +15,13 @@
                     {
                         "type":  "bundled",
                         "file":  "DisableDefender.ps1",
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
                         "type":  "bundled",
                         "file":  "DisableDefenderServices.bat",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {

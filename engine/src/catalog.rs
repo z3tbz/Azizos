@@ -210,9 +210,9 @@ impl Catalog {
 /// An ordered plan ready for the executor.
 #[derive(Debug, Default)]
 pub struct Plan {
-    /// Applied now, parallel where `Action::is_serial()` is false.
+    /// Applied first, in dependency order.
     pub immediate: Vec<String>,
-    /// Applied in the reboot-required phase.
+    /// Applied last: their effect needs the restart that follows the run.
     pub deferred: Vec<String>,
     /// Dropped because the system does not match their `compat`.
     pub skipped_incompatible: Vec<String>,

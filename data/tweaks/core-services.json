@@ -278,7 +278,7 @@
                     {
                         "type":  "bundled",
                         "file":  "defaultservices.bat",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {

@@ -3,8 +3,9 @@
 //! This crate is split so the UI (Tauri) and the CLI share one core:
 //!   schema  — the tweak data model (platform-independent, unit-tested here)
 //!   catalog — load/validate tweak definitions, filter by system, resolve order
-//!   (later) detect — read-only system + requirements probing (Windows only)
-//!   (later) exec   — action executors over the Windows API (Windows only)
+//!   exec    — resilient orchestration over a `Backend` trait (pure, unit-tested)
+//!   detect  — pre-flight requirement evaluation over a `Detector` trait (pure)
+//!   exec_windows / detect_windows — the real Windows API implementations
 //!
 //! Nothing in `schema`/`catalog` touches the system, so it builds and tests on
 //! any platform; the Windows-only modules are gated behind `#[cfg(windows)]`.
@@ -26,5 +27,5 @@ pub use detect_windows::WindowsDetector;
 
 pub use schema::{Action, Check, Compat, Device, Disk, Gpu, Hive, Risk, Tweak};
 pub use catalog::{Catalog, Plan, PlanError, SystemProfile};
-pub use exec::{Backend, Phase, Report, Status};
+pub use exec::{Applied, Backend, Phase, Report, Status};
 pub use detect::{check_requirements, Detector, Met, Remedy, Requirement, RequirementStatus};

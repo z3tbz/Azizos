@@ -1,0 +1,34 @@
+{
+    "security":  {
+                     "ar":  "الأمان",
+                     "en":  "Security"
+                 },
+    "appearance":  {
+                       "ar":  "المظهر",
+                       "en":  "Appearance"
+                   },
+    "privacy":  {
+                    "ar":  "الخصوصية",
+                    "en":  "Privacy"
+                },
+    "performance":  {
+                        "ar":  "الأداء",
+                        "en":  "Performance"
+                    },
+    "services":  {
+                     "ar":  "الخدمات",
+                     "en":  "Services"
+                 },
+    "devices":  {
+                    "ar":  "الأجهزة",
+                    "en":  "Devices"
+                },
+    "updates":  {
+                    "ar":  "التحديثات",
+                    "en":  "Updates"
+                },
+    "debloat":  {
+                    "ar":  "إزالة البرامج",
+                    "en":  "Debloat"
+                }
+}

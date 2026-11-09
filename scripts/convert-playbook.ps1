@@ -58,6 +58,7 @@ function Get-Field([string]$body, [string]$key) {
 $actionsByTweak = @{}
 $meta           = @{}
 $unconverted    = New-Object System.Collections.ArrayList
+$assetsNeeded   = New-Object System.Collections.ArrayList
 
 function Add-Action($tweakId, $file, $isOption, $action) {
   if (-not $script:actionsByTweak.ContainsKey($tweakId)) {
@@ -129,8 +130,12 @@ foreach ($f in $cfgFiles) {
         $scr = Get-Field $body 'command'; $ru = Get-Field $body 'runas'
         $runas = if ($ru -match 'rusted') {'trusted_installer'} else {'user_elevated'}
         if (-not $scr) { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}); break }
-        if ($scr -match '^\.[\\/](.+)$') {
-          Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='bundled'; file=$Matches[1]; runas=$runas })
+        # '.\x.ps1 -Arg' and '& .\x.ps1 -Arg' are both bundled scripts: split file/args.
+        if ($scr -match '^(?:&\s*)?\.[\\/](\S+)\s*(.*)$') {
+          $bf = $Matches[1]; $ba = $Matches[2].Trim()
+          # Opening the optimizer is done by the app after reboot (RunOnce), not mid-run.
+          if ($bf -ieq 'Launch-AzizOptimizer.ps1') { break }
+          Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='bundled'; file=$bf; args=$ba; runas=$runas })
         } else {
           Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='powershell'; script=$scr; runas=$runas })
         }
@@ -138,6 +143,7 @@ foreach ($f in $cfgFiles) {
       'run' {
         $exe = Get-Field $body 'exe'; $a = Get-Field $body 'args'; $ed = Get-Field $body 'exeDir'
         $ru = Get-Field $body 'runas'; $runas = if ($ru -match 'rusted') {'trusted_installer'} else {'user_elevated'}
+        if ($null -eq $a) { $a = '' }
         $sysExe = @('dism.exe','dism','fsutil','label','rundll32.exe','cmd.exe','reg.exe','reg','powercfg','powercfg.exe','sc.exe','sc')
         if (-not $exe) { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}); break }
         if ($exe -match '^bcdedit(\.exe)?$') {
@@ -151,13 +157,18 @@ foreach ($f in $cfgFiles) {
         }
       }
       'download' {
+        # No internet at runtime: the file must be shipped in assets/. The playbook's
+        # next !cmd already runs it with its silent flags, so no action is added here
+        # (running it twice, once without flags, would open an interactive installer).
         $dest = Get-Field $body 'destination'
-        if ($dest) { Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='installer'; file=$dest; args='' }) }
+        if ($dest) { [void]$assetsNeeded.Add(@{file=$dest; tweak=$tweakId; url=(Get-Field $body 'url')}) }
         else { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}) }
       }
       'software' {
+        # Package-manager installs need internet; ship '<pkg>.exe' in assets/ instead.
         $pkg = Get-Field $body 'package'; if (-not $pkg) { $pkg = Get-Field $body 'name' }
-        Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='installer'; file=$pkg; args='' })
+        [void]$assetsNeeded.Add(@{file="$pkg.exe"; tweak=$tweakId; url=''})
+        Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='installer'; file="$pkg.exe"; args='/S' })
       }
       default { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}) }
     }
@@ -196,6 +207,8 @@ foreach ($id in $actionsByTweak.Keys) {
 }
 $repPath = Join-Path $OutDir '..\unconverted.json'
 [IO.File]::WriteAllText($repPath, ($unconverted | ConvertTo-Json -Depth 6), $utf8)
+$assetsPath = Join-Path $OutDir '..\assets-needed.json'
+[IO.File]::WriteAllText($assetsPath, (ConvertTo-Json -InputObject @($assetsNeeded) -Depth 4), $utf8)
 
 "converted tweaks: $written"
 "unconverted entries: $($unconverted.Count)"

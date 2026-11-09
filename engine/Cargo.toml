@@ -17,17 +17,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [target.'cfg(windows)'.dependencies]
-# Microsoft's registry wrapper (clean, documented) does the bulk of the work.
-windows-registry = "0.2"
-# Only used for GetSystemPowerStatus (AC/battery) in detection.
-windows = { version = "0.58", features = [
-  "Win32_System_Power",
-  "Win32_Foundation",
-] }
+# Microsoft's safe registry wrapper (thin layer over the Reg* Win32 API).
+windows-registry = "0.6.1"
+# Raw bindings only (no wrapper cost) — just GetSystemPowerStatus.
+windows-sys = { version = "0.61.2", features = ["Win32_System_Power"] }
 
-[profile.release]
-opt-level = "z"     # small binary
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = true

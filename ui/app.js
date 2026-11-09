@@ -1,8 +1,10 @@
 // Azizos UI — runs in the browser with mock data for preview, and talks to the
 // Rust engine through Tauri `invoke` when running inside the built app.
 (() => {
-  const TAURI = !!(window.__TAURI__ && window.__TAURI__.invoke);
-  const invoke = (cmd, args) => window.__TAURI__.invoke(cmd, args);
+  // Tauri 2 exposes the API under __TAURI__.core / .event (withGlobalTauri: true).
+  const TAURI = !!(window.__TAURI__ && window.__TAURI__.core);
+  const invoke = (cmd, args) => window.__TAURI__.core.invoke(cmd, args);
+  const listen = (ev, cb) => window.__TAURI__.event.listen(ev, cb);
 
   let lang = (navigator.language || "en").toLowerCase().startsWith("ar") ? "ar" : "en";
   const T = () => window.I18N[lang];
@@ -12,6 +14,10 @@
 
   const STEPS = ["welcome","preflight","tweaks","review","apply","done"];
   let current = "welcome";
+
+  // Text from the system (error output, AV names, paths) is never trusted as HTML.
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
+    c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[c]));
 
   function btn(cls, label, onclick) {
     const b = document.createElement("button");
@@ -29,6 +35,8 @@
       if (v != null) el.textContent = v;
     });
     renderStepper(); renderPreflight(); renderTweaks(); wireProfiles(); // re-render dynamic text
+    if (current === "review") renderReview();
+    if (current === "done") renderDone();
   }
   document.getElementById("langBtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; applyLang(); };
   document.getElementById("themeBtn").onclick = () => {
@@ -65,12 +73,14 @@
     if (TAURI) { try { reqStatuses = await invoke("check_requirements"); return; } catch(e){} }
     // mock: defender real-time ON (fail), no third-party AV (pass), desktop (n/a)
     reqStatuses = [
+      { requirement:"SupportedBuild",  met:"Pass", detail:"build 26100" },
       { requirement:"DefenderToggled", met:"Fail", detail:"real-time protection is ON" },
       { requirement:"NoThirdPartyAv",  met:"Pass", detail:null },
       { requirement:"PluggedIn",       met:"NotApplicable", detail:"desktop" },
     ];
   }
   const REQ_LABEL = {
+    SupportedBuild:  { ar:"إصدار ويندوز مدعوم", en:"Supported Windows build" },
     DefenderToggled: { ar:"حماية Defender اللحظية", en:"Defender real-time protection" },
     NoThirdPartyAv:  { ar:"لا يوجد مضاد فيروسات آخر", en:"No third-party antivirus" },
     PluggedIn:       { ar:"موصول بالشاحن", en:"On AC power" },
@@ -88,7 +98,7 @@
       row.className = "req " + cls;
       row.innerHTML = `<span class="dot"></span>
         <div class="txt"><b>${REQ_LABEL[s.requirement][lang]}</b>
-        <small>${s.detail ? s.detail : ""}</small></div>`;
+        <small>${esc(s.detail)}</small></div>`;
       if (met === "fail") {
         const fix = document.createElement("div");
         fix.className = "fix";
@@ -96,9 +106,9 @@
           const a = btn("primary", T().fix_auto, () => fixDefender(true));
           const m = btn("ghost", T().fix_manual, () => fixDefender(false));
           fix.append(a, m);
-        } else {
-          const m = btn("ghost", T().fix_manual, loadAndRender);
-          fix.append(m);
+        } else if (s.requirement !== "SupportedBuild") {
+          // only the user can resolve these (plug in, uninstall AV) — re-check after
+          fix.append(btn("ghost", T().recheck, loadAndRender));
         }
         row.appendChild(fix);
       }
@@ -110,9 +120,12 @@
   async function fixDefender(auto) {
     if (auto) {
       if (!confirm(T().consent)) return;
-      if (TAURI) { try { await invoke("disable_defender_scripts"); } catch(e){} }
+      if (TAURI) {
+        try { await invoke("run_preflight_fix", { requirement: "DefenderToggled" }); }
+        catch (e) { alert(T().fix_unavailable + " (" + e + ")"); await invoke("open_windows_security").catch(() => {}); }
+      }
     } else {
-      if (TAURI) { try { await invoke("open_windows_security"); } catch(e){} }
+      if (TAURI) { await invoke("open_windows_security").catch(() => {}); }
     }
     if (TAURI) { await loadAndRender(); }
     else {
@@ -171,7 +184,7 @@
     if (t.risk === "high") badges += `<span class="badge high">${T().risk_high}</span>`;
     if (t.risk === "medium") badges += `<span class="badge medium">●</span>`;
     if (t.requires_reboot) badges += `<span class="badge reboot">${T().reboot}</span>`;
-    const desc = (t.description && t.description[lang]) ? t.description[lang] : `${t.actions.length} ${T().act_count}`;
+    const desc = (t.description && t.description[lang]) ? t.description[lang] : `${t.actions_count} ${T().act_count}`;
     meta.innerHTML = `<div class="name">${name}${badges}</div><div class="desc">${desc}</div>`;
     row.append(cb, meta);
     return row;
@@ -180,7 +193,7 @@
   // ---------- review ----------
   function renderReview() {
     const sel = CAT.tweaks.filter(t => selected.has(t.id));
-    const actions = sel.reduce((n, t) => n + t.actions.length, 0);
+    const actions = sel.reduce((n, t) => n + t.actions_count, 0);
     const reboot = sel.filter(t => t.requires_reboot).length;
     const body = document.getElementById("reviewBody");
     body.innerHTML = `<div class="sum">
@@ -203,12 +216,26 @@
     const sel = CAT.tweaks.filter(t => selected.has(t.id));
 
     if (TAURI) {
+      const byId = Object.fromEntries(CAT.tweaks.map(t => [t.id, t]));
+      const unlisten = await listen("apply-progress", ({ payload: p }) => {
+        const t = byId[p.id];
+        const label = (t && t.name && t.name[lang]) || p.id;
+        status.textContent = label;
+        const row = document.createElement("div");
+        row.className = "row " + (p.failed ? "bad" : "ok");
+        row.textContent = label + " — " + (p.failed ? T().r_failed : T().r_applied);
+        log.appendChild(row); log.scrollTop = log.scrollHeight;
+        setPct(Math.round((p.done / Math.max(p.total, 1)) * 100));
+      });
       try {
-        const ids = sel.map(t => t.id);
-        lastReport = await invoke("run_plan", { selected: ids, dryRun: false });
-        setPct(100); return go("done");
-      } catch (e) { status.textContent = String(e); }
-      return;
+        lastReport = await invoke("run_plan", { selected: sel.map(t => t.id), dryRun: false });
+      } catch (e) {
+        // the run itself could not start (e.g. unreadable system info): show it on Done
+        lastReport = { applied: 0, failed: 1, skipped: 0, failures: [["azizos", 0, String(e)]], archive: null };
+      }
+      unlisten();
+      setPct(100);
+      return go("done");
     }
 
     // ---- browser simulation ----
@@ -222,7 +249,7 @@
       row.textContent = ((t.name && t.name[lang]) || t.id) + " — " +
         (willFail ? T().r_failed : T().r_applied);
       log.appendChild(row); log.scrollTop = log.scrollHeight;
-      willFail ? failed++ : applied += t.actions.length;
+      willFail ? failed++ : applied += t.actions_count;
       i++; setPct(Math.round((i / sel.length) * 100));
       await new Promise(r => setTimeout(r, 180));
     }
@@ -238,22 +265,28 @@
     const ok = !lastReport || lastReport.failed === 0;
     const body = document.getElementById("doneBody");
     const fails = (lastReport && lastReport.failures) || [];
-    body.innerHTML = `<div class="big">${ok ? "✅" : "⚠️"}</div>
+    body.innerHTML = `<div class="mark ${ok ? "ok" : "warn"}" aria-hidden="true"></div>
       <p>${ok ? T().done_ok : T().done_some}</p>
       <div class="sum" style="justify-content:center">
         <div class="stat"><b>${lastReport ? lastReport.applied : 0}</b><span>${T().r_applied}</span></div>
         <div class="stat"><b>${lastReport ? lastReport.failed : 0}</b><span>${T().r_failed}</span></div>
       </div>
       ${fails.length ? `<div class="failbox"><b>${T().failures_title}</b>${
-        fails.map(f => `<div class="row">${f[0]} — ${f[2]}</div>`).join("")}</div>` : ""}
-      <p class="muted" style="margin-top:16px">${T().archive_note}</p>`;
+        fails.map(f => `<div class="row">${esc(f[0])} — ${esc(f[2])}</div>`).join("")}</div>` : ""}
+      ${(!TAURI || (lastReport && lastReport.archive)) ? `<p class="muted" style="margin-top:16px">${T().archive_note}${
+        lastReport && lastReport.archive ? `<br><code class="path">${esc(lastReport.archive)}</code>` : ""}</p>` : ""}`;
   }
   // re-render done whenever we land on it
   const _go = go;
   go = function (s) { _go(s); if (s === "done") renderDone(); };
   document.getElementById("finishBtn").onclick = async () => {
     const auto = document.getElementById("autoRestart").checked;
-    if (TAURI) { try { await invoke("finish", { autoRestart: auto }); } catch(e){} }
+    if (TAURI) {
+      try {
+        const r = await invoke("finish", { autoRestart: auto });
+        if (!r.restarting) alert(r.optimizer_scheduled ? T().finish_manual : T().finish_manual_no_opt);
+      } catch (e) { alert(String(e)); }
+    }
     else alert(lang === "ar" ? "في التطبيق الحقيقي: إعادة تشغيل ثم فتح الأوبتمايزر." :
                                "In the real app: restart, then open the Optimizer.");
   };

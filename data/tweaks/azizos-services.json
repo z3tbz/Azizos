@@ -15,7 +15,7 @@
                     {
                         "type":  "bundled",
                         "file":  "filters.bat",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
@@ -975,13 +975,13 @@
                     {
                         "type":  "bundled",
                         "file":  "Azizosservices.bat",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
                         "type":  "bundled",
                         "file":  "LaptopCheck.bat",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {

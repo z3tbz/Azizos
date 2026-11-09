@@ -39,7 +39,7 @@
                     {
                         "type":  "bundled",
                         "file":  "AzizosPowerPlanApplier.exe",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
@@ -90,13 +90,13 @@
                     {
                         "type":  "bundled",
                         "file":  "disable-write-cache-buffering.bat",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
                         "type":  "bundled",
                         "file":  "disable-netbios.bat",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
@@ -107,23 +107,20 @@
                     {
                         "type":  "bundled",
                         "file":  "svchost.ps1",
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
                         "type":  "bundled",
                         "file":  "Bitlocker.ps1",
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
                         "type":  "bundled",
                         "file":  "DEVMANVIEW.CMD",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "installer",
-                        "file":  "vcpp.exe",
-                        "args":  ""
                     },
                     {
                         "type":  "command",
@@ -131,8 +128,9 @@
                         "args":  "/c vcpp.exe /ai"
                     },
                     {
-                        "type":  "powershell",
-                        "script":  "\u0026 .\\Install-AzizOptimizer.ps1",
+                        "type":  "bundled",
+                        "file":  "Install-AzizOptimizer.ps1",
+                        "args":  "",
                         "runas":  "user_elevated"
                     }
                 ]

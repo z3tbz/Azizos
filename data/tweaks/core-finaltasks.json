@@ -37,14 +37,15 @@
                         "op":  "clear_cache"
                     },
                     {
-                        "type":  "powershell",
-                        "script":  "\u0026 .\\Apply-AzizosWallpaper.ps1 -Style Horizon",
+                        "type":  "bundled",
+                        "file":  "Apply-AzizosWallpaper.ps1",
+                        "args":  "-Style Horizon",
                         "runas":  "user_elevated"
                     },
                     {
                         "type":  "bundled",
                         "file":  "powerplan.bat",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
@@ -56,11 +57,6 @@
                         "type":  "file",
                         "op":  "delete",
                         "path":  "%SystemDrive%\\\\Windows\\\\System32\\\\OneDriveSetup.exe"
-                    },
-                    {
-                        "type":  "powershell",
-                        "script":  "\u0026 .\\Launch-AzizOptimizer.ps1",
-                        "runas":  "user_elevated"
                     }
                 ]
 }

@@ -9,12 +9,23 @@
 
 use crate::catalog::{Catalog, Plan};
 use crate::schema::{Action, Check, Tweak};
+use serde::Serialize;
 
 /// The OS primitives the engine needs. One method per concern so the risky FFI
 /// stays small and every call site is auditable.
+/// What a successful `apply` did.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Applied {
+    /// The change was made.
+    Done,
+    /// Nothing to do on this machine (service not present, value already
+    /// absent, …). Reported as skipped — not a failure, not a fake success.
+    NotApplicable(String),
+}
+
 pub trait Backend {
-    /// Apply one action. Returns Ok on success, Err(reason) on failure.
-    fn apply(&mut self, action: &Action) -> Result<(), String>;
+    /// Apply one action. Ok(Done | NotApplicable) on success, Err(reason) on failure.
+    fn apply(&mut self, action: &Action) -> Result<Applied, String>;
 
     /// Evaluate a post-apply verification probe (true = the change is in effect).
     fn verify(&mut self, check: &Check) -> Result<bool, String>;
@@ -24,7 +35,7 @@ pub trait Backend {
     fn snapshot(&mut self, action: &Action) -> Option<Action>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum Status {
     Applied,
     Verified,
@@ -32,7 +43,7 @@ pub enum Status {
     Skipped,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ActionOutcome {
     pub index: usize,
     pub status: Status,
@@ -40,7 +51,7 @@ pub struct ActionOutcome {
     pub detail: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TweakOutcome {
     pub id: String,
     pub actions: Vec<ActionOutcome>,
@@ -54,7 +65,7 @@ impl TweakOutcome {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Serialize)]
 pub struct Report {
     pub tweaks: Vec<TweakOutcome>,
     pub skipped_incompatible: Vec<String>,
@@ -113,6 +124,19 @@ pub fn run_phase<B: Backend>(
     backend: &mut B,
     dry_run: bool,
 ) -> Report {
+    run_phase_observed(catalog, plan, phase, backend, dry_run, &mut |_| {})
+}
+
+/// Same as [`run_phase`], calling `on_tweak` after each tweak finishes so the UI
+/// can show live progress (the outcome carries id, per-action status and errors).
+pub fn run_phase_observed<B: Backend>(
+    catalog: &Catalog,
+    plan: &Plan,
+    phase: Phase,
+    backend: &mut B,
+    dry_run: bool,
+    on_tweak: &mut dyn FnMut(&TweakOutcome),
+) -> Report {
     let ids = match phase {
         Phase::Immediate => &plan.immediate,
         Phase::Deferred => &plan.deferred,
@@ -124,7 +148,9 @@ pub fn run_phase<B: Backend>(
 
     for id in ids {
         let Some(tweak) = catalog.get(id) else { continue };
-        report.tweaks.push(apply_tweak(tweak, backend, dry_run));
+        let outcome = apply_tweak(tweak, backend, dry_run);
+        on_tweak(&outcome);
+        report.tweaks.push(outcome);
     }
     report
 }
@@ -151,8 +177,22 @@ fn apply_tweak<B: Backend>(tweak: &Tweak, backend: &mut B, dry_run: bool) -> Twe
             outcome.revert.insert(0, inv);
         }
 
-        let status = match backend.apply(action) {
-            Ok(()) => Status::Applied,
+        // A panic in one action (a bug, never expected) becomes a recorded failure.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| backend.apply(action)))
+            .unwrap_or_else(|p| {
+                let msg = p
+                    .downcast_ref::<&str>()
+                    .map(|s| s.to_string())
+                    .or_else(|| p.downcast_ref::<String>().cloned())
+                    .unwrap_or_else(|| "unknown".into());
+                Err(format!("internal error: {msg}"))
+            });
+        let status = match result {
+            Ok(Applied::Done) => Status::Applied,
+            Ok(Applied::NotApplicable(why)) => {
+                outcome.actions.push(ActionOutcome { index: i, status: Status::Skipped, detail: Some(why) });
+                continue;
+            }
             Err(e) => {
                 outcome.actions.push(ActionOutcome {
                     index: i,
@@ -201,7 +241,7 @@ fn apply_tweak<B: Backend>(tweak: &Tweak, backend: &mut B, dry_run: bool) -> Twe
 }
 
 /// Roll back a prior run from its captured revert actions (newest first).
-pub fn rollback<B: Backend>(revert: &[Action], backend: &mut B) -> Vec<(usize, Result<(), String>)> {
+pub fn rollback<B: Backend>(revert: &[Action], backend: &mut B) -> Vec<(usize, Result<Applied, String>)> {
     revert
         .iter()
         .enumerate()
@@ -221,13 +261,15 @@ mod tests {
         applied: Vec<String>,
     }
     impl Backend for MockBackend {
-        fn apply(&mut self, action: &Action) -> Result<(), String> {
+        fn apply(&mut self, action: &Action) -> Result<Applied, String> {
             let j = serde_json::to_string(action).unwrap();
             self.applied.push(j.clone());
             if j.contains("boom") {
                 Err("simulated failure".into())
+            } else if j.contains("absent") {
+                Ok(Applied::NotApplicable("not present".into()))
             } else {
-                Ok(())
+                Ok(Applied::Done)
             }
         }
         fn verify(&mut self, _c: &Check) -> Result<bool, String> {
@@ -282,6 +324,17 @@ mod tests {
         assert_eq!(failed, 1);
         assert_eq!(applied, 4);
         assert_eq!(report.failures()[0].0, "mix");
+    }
+
+    #[test]
+    fn not_applicable_is_skipped_not_failed() {
+        let cat = Catalog::new(vec![tweak("t", &["good", "absent"])]).unwrap();
+        let plan = cat.plan(&["t".into()], &sys()).unwrap();
+        let mut be = MockBackend::default();
+        let mut seen = 0;
+        let report = run_phase_observed(&cat, &plan, Phase::Immediate, &mut be, false, &mut |_| seen += 1);
+        assert_eq!(seen, 1);
+        assert_eq!(report.counts(), (1, 0, 1));
     }
 
     #[test]

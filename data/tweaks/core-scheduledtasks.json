@@ -15,7 +15,7 @@
                     {
                         "type":  "bundled",
                         "file":  "ScheduledTasksDisabler.exe",
-                        "args":  null,
+                        "args":  "",
                         "runas":  "user_elevated"
                     }
                 ]

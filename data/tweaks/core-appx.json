@@ -372,11 +372,13 @@
                     {
                         "type":  "bundled",
                         "file":  "Copilot.ps1",
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {
                         "type":  "bundled",
                         "file":  "StartMenuCache.ps1",
+                        "args":  "",
                         "runas":  "user_elevated"
                     },
                     {

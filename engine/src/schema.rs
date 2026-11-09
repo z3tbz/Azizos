@@ -4,6 +4,11 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Accept `null` for optional string fields (older exports wrote `"args": null`).
+fn null_as_empty<'de, D: serde::Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+    Ok(Option::<String>::deserialize(d)?.unwrap_or_default())
+}
+
 /// Bilingual display string.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Localized {
@@ -195,7 +200,7 @@ pub enum Action {
     },
     Command {
         exe: String,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "null_as_empty")]
         args: String,
     },
     Powershell {
@@ -220,7 +225,7 @@ pub enum Action {
     /// (.ps1 → PowerShell, .bat/.cmd → cmd, .exe → direct).
     Bundled {
         file: String,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "null_as_empty")]
         args: String,
         #[serde(default = "Action::ps_user")]
         runas: String,
@@ -228,7 +233,7 @@ pub enum Action {
     /// Run a bundled installer silently (shipped offline — no download).
     Installer {
         file: String,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "null_as_empty")]
         args: String,
     },
     Env {
@@ -357,6 +362,13 @@ mod tests {
         assert_eq!(t.display_name("ar"), "الوضع الداكن");
         assert_eq!(t.actions.len(), 1);
         assert!(t.compat.builds.contains(26100));
+    }
+
+    #[test]
+    fn null_args_are_tolerated() {
+        let a: Action =
+            serde_json::from_str(r#"{"type":"bundled","file":"x.bat","args":null}"#).unwrap();
+        assert!(matches!(a, Action::Bundled { ref args, .. } if args.is_empty()));
     }
 
     #[test]

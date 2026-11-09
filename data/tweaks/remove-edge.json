@@ -63,7 +63,8 @@
                     },
                     {
                         "type":  "bundled",
-                        "file":  "EDGE.ps1 -UninstallEdge",
+                        "file":  "EDGE.ps1",
+                        "args":  "-UninstallEdge",
                         "runas":  "user_elevated"
                     },
                     {

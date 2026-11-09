@@ -1,0 +1,4 @@
+{
+  "_comment": "Optional: for a requirement, the bundled file (in assets/) that 'Fix automatically' runs after the user consents. Leave a requirement out to offer only the manual path.",
+  "fixes": {}
+}

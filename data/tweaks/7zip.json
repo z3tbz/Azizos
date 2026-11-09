@@ -14,8 +14,8 @@
     "actions":  [
                     {
                         "type":  "installer",
-                        "file":  "7zip",
-                        "args":  ""
+                        "file":  "7zip.exe",
+                        "args":  "/S"
                     }
                 ]
 }

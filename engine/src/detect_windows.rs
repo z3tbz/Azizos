@@ -1,140 +1,176 @@
-//! Windows backend for detection (`#[cfg(windows)]`) — read-only.
+//! Windows backend for detection (`#[cfg(windows)]`) — strictly read-only.
 //!
-//! Registry for build/edition/Defender state; `GetSystemPowerStatus` for AC/
-//! battery; PowerShell probes for GPU, disk media type and third-party AV
-//! (root\SecurityCenter2). Nothing here changes the machine.
+//! Cheapest source first:
+//!   * build / edition / GPU / Defender state -> registry reads (microseconds,
+//!     no child process),
+//!   * AC / battery -> `GetSystemPowerStatus` via `windows-sys` (raw binding,
+//!     zero wrapper cost),
+//!   * system-disk media type and registered AV products -> one hidden
+//!     PowerShell call each (they live only in WMI/Storage).
+//! Nothing here changes the machine.
 
 use crate::catalog::SystemProfile;
 use crate::detect::Detector;
+use crate::exec_windows::{encode_ps, CREATE_NO_WINDOW};
 use crate::schema::{Device, Disk, Gpu};
-use std::process::Command;
+use std::os::windows::process::CommandExt;
+use std::process::{Command, Stdio};
+use windows_registry::LOCAL_MACHINE;
 
 pub struct WindowsDetector;
 
+const CURVER: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion";
+/// Device-setup class for display adapters.
+const DISPLAY_CLASS: &str = r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
+
 fn reg_string(path: &str, name: &str) -> Option<String> {
-    windows_registry::LOCAL_MACHINE.open(path).ok()?.get_string(name).ok()
+    LOCAL_MACHINE.open(path).ok()?.get_string(name).ok()
 }
 fn reg_u32(path: &str, name: &str) -> Option<u32> {
-    windows_registry::LOCAL_MACHINE.open(path).ok()?.get_u32(name).ok()
+    LOCAL_MACHINE.open(path).ok()?.get_u32(name).ok()
 }
 
-fn ps(command: &str) -> String {
-    Command::new("powershell")
-        .args(["-NoProfile", "-Command", command])
+/// Run a read-only PowerShell query without a console window; stdout trimmed.
+fn ps_query(script: &str) -> String {
+    let exe = std::path::PathBuf::from(std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into()))
+        .join(r"System32\WindowsPowerShell\v1.0\powershell.exe");
+    Command::new(exe)
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdin(Stdio::null())
+        .args(["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand"])
+        .arg(encode_ps(script))
         .output()
         .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
         .unwrap_or_default()
 }
 
-const CURVER: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion";
+/// Map the registry `EditionID` to our compat tags.
+pub(crate) fn normalize_edition(id: &str) -> String {
+    let e = id.to_ascii_lowercase();
+    let tag = if e.contains("iot") {
+        "iot"
+    } else if e.ends_with("enterprises") || e.contains("ltsc") {
+        "ltsc"
+    } else if e.contains("enterprise") {
+        "enterprise"
+    } else if e.contains("education") {
+        "education"
+    } else if e.contains("pro") {
+        "pro"
+    } else if e.starts_with("core") || e.contains("home") {
+        "home"
+    } else {
+        return e;
+    };
+    tag.to_string()
+}
+
+fn detect_gpu() -> Gpu {
+    let Ok(class) = LOCAL_MACHINE.open(DISPLAY_CLASS) else { return Gpu::Any };
+    let Ok(keys) = class.keys() else { return Gpu::Any };
+    let mut found = Gpu::Any;
+    for sub in keys {
+        let Some(desc) = class.open(&sub).ok().and_then(|k| k.get_string("DriverDesc").ok()) else { continue };
+        let d = desc.to_ascii_lowercase();
+        // A discrete GPU wins over an integrated one.
+        if d.contains("nvidia") {
+            return Gpu::Nvidia;
+        } else if d.contains("amd") || d.contains("radeon") {
+            found = Gpu::Amd;
+        } else if d.contains("intel") && found == Gpu::Any {
+            found = Gpu::Intel;
+        }
+    }
+    found
+}
+
+fn detect_disk() -> Disk {
+    let media = ps_query(
+        "$n=(Get-Partition -DriveLetter $env:SystemDrive[0] -ErrorAction SilentlyContinue).DiskNumber;\
+         (Get-PhysicalDisk | Where-Object DeviceId -eq \"$n\" | Select-Object -First 1).MediaType",
+    )
+    .to_ascii_lowercase();
+    if media.contains("ssd") {
+        Disk::Ssd
+    } else if media.contains("hdd") {
+        Disk::Hdd
+    } else {
+        Disk::Any
+    }
+}
+
+fn power_status() -> Option<(u8, u8)> {
+    use windows_sys::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
+    // SAFETY: plain C struct, zero is a valid bit pattern; the API fills it.
+    let mut s: SYSTEM_POWER_STATUS = unsafe { std::mem::zeroed() };
+    let ok = unsafe { GetSystemPowerStatus(&mut s) };
+    (ok != 0).then_some((s.ACLineStatus, s.BatteryFlag))
+}
 
 impl Detector for WindowsDetector {
     fn profile(&self) -> Result<SystemProfile, String> {
         let build = reg_string(CURVER, "CurrentBuildNumber")
             .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or(0);
-
-        let edition = reg_string(CURVER, "EditionID")
-            .unwrap_or_default()
-            .to_lowercase();
-        // Normalise a few common editions into our compat tags.
-        let edition = if edition.contains("iot") {
-            "iot".to_string()
-        } else if edition.contains("enterprises") || edition.contains("ltsc") {
-            "ltsc".to_string()
-        } else if edition.contains("enterprise") {
-            "enterprise".to_string()
-        } else if edition.contains("pro") {
-            "pro".to_string()
-        } else if edition.contains("core") || edition.contains("home") {
-            "home".to_string()
-        } else {
-            edition
-        };
-
-        let device = match self.on_ac_power_raw() {
-            Some(_has_battery @ true) => Device::Laptop,
+            .ok_or("cannot read Windows build number")?;
+        let edition = normalize_edition(&reg_string(CURVER, "EditionID").unwrap_or_default());
+        // BatteryFlag 128 = "no system battery".
+        let device = match power_status() {
+            Some((_, flag)) if flag != 128 => Device::Laptop,
             _ => Device::Desktop,
         };
-
-        let gpu_s = ps("(Get-CimInstance Win32_VideoController | Select-Object -First 1 -ExpandProperty Name)").to_lowercase();
-        let gpu = if gpu_s.contains("nvidia") {
-            Gpu::Nvidia
-        } else if gpu_s.contains("amd") || gpu_s.contains("radeon") {
-            Gpu::Amd
-        } else if gpu_s.contains("intel") {
-            Gpu::Intel
-        } else {
-            Gpu::Any
-        };
-
-        let media = ps("(Get-PhysicalDisk | Select-Object -First 1 -ExpandProperty MediaType)").to_lowercase();
-        let disk = if media.contains("ssd") {
-            Disk::Ssd
-        } else if media.contains("hdd") {
-            Disk::Hdd
-        } else {
-            Disk::Any
-        };
-
-        Ok(SystemProfile { build, edition, device, gpu, disk })
+        Ok(SystemProfile { build, edition, device, gpu: detect_gpu(), disk: detect_disk() })
     }
 
     fn defender_realtime_on(&self) -> Result<bool, String> {
-        // DisableRealtimeMonitoring == 1 means real-time protection is OFF.
-        let a = reg_u32(
-            r"SOFTWARE\Microsoft\Windows Defender\Real-Time Protection",
-            "DisableRealtimeMonitoring",
-        );
+        // DisableRealtimeMonitoring == 1 (setting or policy) means real-time is OFF.
+        let a = reg_u32(r"SOFTWARE\Microsoft\Windows Defender\Real-Time Protection", "DisableRealtimeMonitoring");
         let b = reg_u32(
             r"SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection",
             "DisableRealtimeMonitoring",
         );
-        let off = a == Some(1) || b == Some(1);
-        Ok(!off) // on unless explicitly disabled
+        Ok(!(a == Some(1) || b == Some(1)))
     }
 
     fn third_party_av(&self) -> Result<Vec<String>, String> {
-        // SecurityCenter2 lists all registered AV products; exclude Defender.
-        let out = ps(
-            "Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntiVirusProduct \
+        let out = ps_query(
+            "Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntiVirusProduct -ErrorAction SilentlyContinue \
              | Select-Object -ExpandProperty displayName",
         );
-        let list: Vec<String> = out
+        Ok(out
             .lines()
-            .map(|l| l.trim().to_string())
+            .map(str::trim)
             .filter(|l| !l.is_empty())
             .filter(|l| {
-                let lc = l.to_lowercase();
+                let lc = l.to_ascii_lowercase();
                 !(lc.contains("windows defender") || lc.contains("microsoft defender"))
             })
-            .collect();
-        Ok(list)
+            .map(str::to_string)
+            .collect())
     }
 
     fn on_ac_power(&self) -> Result<Option<bool>, String> {
-        use windows::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
-        let mut sps = SYSTEM_POWER_STATUS::default();
-        unsafe { GetSystemPowerStatus(&mut sps).map_err(|e| e.to_string())? };
-        // BatteryFlag 128 => no system battery (desktop) => N/A.
-        if sps.BatteryFlag == 128 {
-            return Ok(None);
+        let (line, flag) = power_status().ok_or("GetSystemPowerStatus failed")?;
+        if flag == 128 {
+            return Ok(None); // desktop: not applicable
         }
-        // ACLineStatus: 0 offline, 1 online, 255 unknown.
-        match sps.ACLineStatus {
-            1 => Ok(Some(true)),
-            0 => Ok(Some(false)),
-            _ => Ok(Some(true)), // unknown -> don't block
-        }
+        // ACLineStatus: 0 offline, 1 online, 255 unknown (don't block on unknown).
+        Ok(Some(line != 0))
     }
 }
 
-impl WindowsDetector {
-    /// true when a system battery is present (used for laptop/desktop heuristic).
-    fn on_ac_power_raw(&self) -> Option<bool> {
-        use windows::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
-        let mut sps = SYSTEM_POWER_STATUS::default();
-        unsafe { GetSystemPowerStatus(&mut sps).ok()? };
-        Some(sps.BatteryFlag != 128)
+#[cfg(test)]
+mod tests {
+    use super::normalize_edition as n;
+
+    #[test]
+    fn editions_map_to_compat_tags() {
+        assert_eq!(n("Core"), "home");
+        assert_eq!(n("CoreSingleLanguage"), "home");
+        assert_eq!(n("Professional"), "pro");
+        assert_eq!(n("ProfessionalWorkstation"), "pro");
+        assert_eq!(n("Education"), "education");
+        assert_eq!(n("Enterprise"), "enterprise");
+        assert_eq!(n("EnterpriseS"), "ltsc");
+        assert_eq!(n("IoTEnterpriseS"), "iot");
     }
 }

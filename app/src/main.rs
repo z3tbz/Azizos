@@ -1,43 +1,52 @@
-//! Azizos app — Tauri shell bridging the UI to the engine.
-//!
-//! The UI (../ui) calls these commands via `window.__TAURI__.invoke`. All the
-//! real work lives in `azizos-engine`; this file only wires commands to it and
-//! loads the embedded tweak catalog. Build on Windows (see docs/BUILD.md).
+//! Azizos — Tauri 2 shell. The UI (../ui) calls these commands through
+//! `window.__TAURI__.core.invoke`; all real work lives in `azizos-engine`.
+//! Everything (catalog, assets) is embedded at build time — see build.rs.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[cfg(not(windows))]
+compile_error!("the Azizos app targets Windows 10/11 only (the engine itself builds anywhere)");
+
+mod report;
+mod system;
+
 use azizos_engine::catalog::{Catalog, SystemProfile};
-use azizos_engine::detect::{check_requirements, RequirementStatus};
-use azizos_engine::exec::{self, Phase};
-use azizos_engine::schema::Tweak;
+use azizos_engine::detect::{self, Detector, RequirementStatus};
+use azizos_engine::exec::{self, Phase, Report};
+use azizos_engine::schema::Action;
+use azizos_engine::{Backend, WindowsBackend, WindowsDetector};
 use serde::Serialize;
-use std::sync::Mutex;
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use tauri::{Emitter, Manager};
 
-/// Tweak catalog embedded at compile time from `../data/tweaks/*.json`.
-/// `include_dir`-style embedding keeps everything inside the single binary.
-const CATALOG_JSON: &[(&str, &str)] = &[]; // populated by build.rs / include! in real build
-
-struct AppState {
-    catalog: Catalog,
+mod embedded {
+    include!(concat!(env!("OUT_DIR"), "/embedded.rs"));
 }
 
-fn load_catalog() -> Catalog {
-    // In the shipped build the JSON docs are embedded; here we read the folder
-    // next to the app during development.
-    let mut docs = Vec::new();
-    if CATALOG_JSON.is_empty() {
-        if let Ok(rd) = std::fs::read_dir("../data/tweaks") {
-            for e in rd.flatten() {
-                if e.path().extension().and_then(|s| s.to_str()) == Some("json") {
-                    if let Ok(s) = std::fs::read_to_string(e.path()) {
-                        docs.push(s);
-                    }
-                }
-            }
+struct AppState {
+    catalog: Arc<Catalog>,
+    /// Where the embedded assets were unpacked for this session (lazy).
+    assets: Mutex<Option<PathBuf>>,
+}
+
+impl AppState {
+    fn assets_dir(&self) -> Result<PathBuf, String> {
+        let mut slot = self.assets.lock().map_err(|_| "state poisoned")?;
+        if let Some(p) = slot.as_ref() {
+            return Ok(p.clone());
         }
-    } else {
-        docs = CATALOG_JSON.iter().map(|(_, c)| c.to_string()).collect();
+        let p = system::unpack_assets(embedded::ASSETS)?;
+        *slot = Some(p.clone());
+        Ok(p)
     }
-    Catalog::from_json_docs(docs).expect("catalog must load")
+}
+
+#[derive(Serialize, Clone)]
+struct Progress {
+    done: usize,
+    total: usize,
+    id: String,
+    failed: bool,
 }
 
 #[derive(Serialize)]
@@ -45,93 +54,137 @@ struct ReportDto {
     applied: usize,
     failed: usize,
     skipped: usize,
+    /// (tweak id, action index, reason incl. error code)
     failures: Vec<(String, usize, String)>,
+    /// Folder on the Desktop holding report.txt + report.json (None if it could not be written).
+    archive: Option<String>,
 }
 
 #[tauri::command]
-fn get_catalog(state: tauri::State<Mutex<AppState>>) -> Vec<Tweak> {
-    state.lock().unwrap().catalog.all().to_vec()
-}
-
-#[tauri::command]
-fn check_requirements_cmd() -> Vec<RequirementStatus> {
-    #[cfg(windows)]
-    {
-        return check_requirements(&azizos_engine::detect_windows::WindowsDetector);
-    }
-    #[allow(unreachable_code)]
-    Vec::new()
+fn check_requirements() -> Vec<RequirementStatus> {
+    detect::check_requirements(&WindowsDetector)
 }
 
 #[tauri::command]
 fn detect_system() -> Result<SystemProfile, String> {
-    #[cfg(windows)]
-    {
-        use azizos_engine::detect::Detector;
-        return azizos_engine::detect_windows::WindowsDetector.profile();
-    }
-    #[allow(unreachable_code)]
-    Err("not windows".into())
+    WindowsDetector.profile()
 }
 
+/// Apply the user's selection. Runs on a worker thread so the window stays
+/// responsive, and emits `apply-progress` after every tweak.
 #[tauri::command]
-fn run_plan(
-    state: tauri::State<Mutex<AppState>>,
+async fn run_plan(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
     selected: Vec<String>,
     dry_run: bool,
 ) -> Result<ReportDto, String> {
-    let st = state.lock().unwrap();
-    let sys = detect_system().unwrap_or(SystemProfile {
-        build: 0,
-        edition: "any".into(),
-        device: azizos_engine::schema::Device::Any,
-        gpu: azizos_engine::schema::Gpu::Any,
-        disk: azizos_engine::schema::Disk::Any,
-    });
-    let plan = st.catalog.plan(&selected, &sys).map_err(|e| e.to_string())?;
+    let catalog = state.catalog.clone();
+    let assets = state.assets_dir()?;
+    let desktop = app.path().desktop_dir().ok();
+    let emitter = app.clone();
 
-    #[cfg(windows)]
-    {
-        let mut be = azizos_engine::exec_windows::WindowsBackend::new(assets_dir());
-        let mut report = exec::run_phase(&st.catalog, &plan, Phase::Immediate, &mut be, dry_run);
-        let deferred = exec::run_phase(&st.catalog, &plan, Phase::Deferred, &mut be, dry_run);
+    tauri::async_runtime::spawn_blocking(move || -> Result<ReportDto, String> {
+        let sys = WindowsDetector.profile()?;
+        let plan = catalog.plan(&selected, &sys).map_err(|e| e.to_string())?;
+        let total = plan.total();
+        let mut done = 0usize;
+        let mut on_tweak = |t: &exec::TweakOutcome| {
+            done += 1;
+            let _ = emitter.emit(
+                "apply-progress",
+                Progress { done, total, id: t.id.clone(), failed: t.failed() },
+            );
+        };
+
+        let mut be = WindowsBackend::new(assets);
+        // Immediate changes first; reboot-dependent ones last (they take effect
+        // on the restart that follows).
+        let mut report: Report =
+            exec::run_phase_observed(&catalog, &plan, Phase::Immediate, &mut be, dry_run, &mut on_tweak);
+        let deferred =
+            exec::run_phase_observed(&catalog, &plan, Phase::Deferred, &mut be, dry_run, &mut on_tweak);
         report.tweaks.extend(deferred.tweaks);
+
+        let archive = desktop
+            .and_then(|d| report::write_archive(&d, &catalog, &sys, &selected, &report).ok())
+            .map(|p| p.to_string_lossy().to_string());
         let (applied, failed, skipped) = report.counts();
-        return Ok(ReportDto { applied, failed, skipped, failures: report.failures() });
-    }
-    #[allow(unreachable_code)]
-    Err("not windows".into())
+        Ok(ReportDto { applied, failed, skipped, failures: report.failures(), archive })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
-#[cfg(windows)]
-fn assets_dir() -> std::path::PathBuf {
-    // Bundled assets are unpacked next to the running exe at startup.
-    std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.join("assets")))
-        .unwrap_or_else(|| std::path::PathBuf::from("assets"))
+/// "Fix automatically" for a pre-flight requirement: runs the bundled file the
+/// playbook author mapped to it in data/preflight.json. The UI only calls this
+/// after the user has explicitly agreed in a confirmation dialog.
+#[tauri::command]
+async fn run_preflight_fix(state: tauri::State<'_, AppState>, requirement: String) -> Result<(), String> {
+    let fix = system::preflight_fix(embedded::PREFLIGHT, &requirement)
+        .ok_or("no automatic fix is bundled for this requirement")?;
+    let assets = state.assets_dir()?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut be = WindowsBackend::new(assets);
+        be.apply(&Action::Bundled { file: fix.file, args: fix.args, runas: "user_elevated".into() })
+            .map(|_| ())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// "I'll do it myself": open Windows Security on the relevant page.
+#[tauri::command]
+fn open_windows_security() -> Result<(), String> {
+    system::open_uri("windowsdefender://threatsettings")
+}
+
+#[derive(Serialize)]
+struct FinishDto {
+    /// AZIZ Gaming Optimizer will open once after the next sign-in.
+    optimizer_scheduled: bool,
+    restarting: bool,
 }
 
 #[tauri::command]
-fn finish(auto_restart: bool) {
-    // Register the optimizer to open after reboot, then restart.
-    #[cfg(windows)]
-    if auto_restart {
-        let _ = std::process::Command::new("shutdown").args(["/r", "/t", "5"]).spawn();
+fn finish(app: tauri::AppHandle, state: tauri::State<'_, AppState>, auto_restart: bool) -> Result<FinishDto, String> {
+    let optimizer_scheduled = system::schedule_optimizer_after_reboot().is_ok();
+    if let Ok(mut slot) = state.assets.lock() {
+        if let Some(dir) = slot.take() {
+            let _ = std::fs::remove_dir_all(dir);
+        }
     }
-    let _ = auto_restart;
+    if auto_restart {
+        system::restart_in(5)?;
+        app.exit(0);
+    }
+    Ok(FinishDto { optimizer_scheduled, restarting: auto_restart })
 }
 
 fn main() {
+    let catalog = Catalog::from_json_docs(embedded::TWEAKS.iter().map(|s| s.to_string()))
+        .expect("embedded catalog is validated at build time by `cargo test`");
+
     tauri::Builder::default()
-        .manage(Mutex::new(AppState { catalog: load_catalog() }))
+        .manage(AppState { catalog: Arc::new(catalog), assets: Mutex::new(None) })
         .invoke_handler(tauri::generate_handler![
-            get_catalog,
-            check_requirements_cmd,
+            check_requirements,
             detect_system,
             run_plan,
+            run_preflight_fix,
+            open_windows_security,
             finish
         ])
         .run(tauri::generate_context!())
         .expect("error while running Azizos");
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn embedded_catalog_loads() {
+        let c = azizos_engine::Catalog::from_json_docs(super::embedded::TWEAKS.iter().map(|s| s.to_string()))
+            .expect("catalog");
+        assert!(!c.all().is_empty());
+    }
 }

@@ -1,0 +1,17 @@
+[
+    {
+        "tweak":  "core-commands",
+        "url":  "https://github.com/abbodi1406/vcredist/releases/download/v0.101.0/VisualCppRedist_AIO_x86_x64.exe",
+        "file":  "vcpp.exe"
+    },
+    {
+        "tweak":  "openshell",
+        "url":  "https://github.com/Open-Shell/Open-Shell-Menu/releases/download/v4.4.198/OpenShellSetup_4_4_198.exe",
+        "file":  "OpenShell.exe"
+    },
+    {
+        "tweak":  "7zip",
+        "url":  "",
+        "file":  "7zip.exe"
+    }
+]

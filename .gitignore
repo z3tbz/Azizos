@@ -2,3 +2,8 @@
 *.tmp
 
 scratch-assets/
+
+# Embedded playbook binaries (large) — recreate with scripts/sync-assets.ps1
+assets/
+target/
+app/gen/

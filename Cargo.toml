@@ -4,3 +4,12 @@ members = ["engine", "app"]
 
 # `cargo test -p azizos-engine` runs the pure-core tests anywhere.
 # `cargo tauri build` (in app/) produces the Windows installer.
+
+# Profiles only take effect at the workspace root.
+[profile.release]
+opt-level = "s"      # small but not slow
+lto = true
+codegen-units = 1
+strip = true
+# panic = "unwind" (default) on purpose: the executor catches a panic inside one
+# action, records it as a failure and keeps going — like AME, never a crash.

@@ -1,8 +1,8 @@
 {
     "id":  "core-services",
     "name":  {
-                 "ar":  "أساسي — services",
-                 "en":  "Core — services"
+                 "ar":  "الخدمات الأساسية",
+                 "en":  "Core services"
              },
     "category":  "services",
     "profiles":  [
@@ -299,5 +299,9 @@
                         "kind":  "dword",
                         "data":  1
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "يضبط نوع تشغيل خدمات التتبّع والخدمات النادرة الاستخدام.",
+                        "en":  "Sets the startup type of tracking and rarely used services."
+                    }
 }

@@ -1,8 +1,8 @@
 {
     "id":  "core-components",
     "name":  {
-                 "ar":  "أساسي — components",
-                 "en":  "Core — components"
+                 "ar":  "مكوّنات ويندوز",
+                 "en":  "Windows components"
              },
     "category":  "performance",
     "profiles":  [
@@ -47,5 +47,9 @@
                         "script":  "set-executionpolicy unrestricted -force",
                         "runas":  "user_elevated"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "يوقف المكوّنات الاختيارية اللي ما يحتاجها اللعب.",
+                        "en":  "Turns off optional components that are not needed for gaming."
+                    }
 }

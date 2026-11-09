@@ -30,5 +30,9 @@
                         "kind":  "dword",
                         "data":  1
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "قائمة الزر الأيمن كاملة بدون «عرض خيارات إضافية».",
+                        "en":  "Full right-click menu without “Show more options”."
+                    }
 }

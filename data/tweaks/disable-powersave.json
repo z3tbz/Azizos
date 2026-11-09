@@ -84,5 +84,9 @@
                         "op":  "change",
                         "startup":  "disabled"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "تأخير أقل واستهلاك طاقة أعلى. الأفضل للأجهزة المكتبية.",
+                        "en":  "Lower latency, more power draw. Best on desktops."
+                    }
 }

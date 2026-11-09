@@ -1,8 +1,8 @@
 {
     "id":  "core-appx",
     "name":  {
-                 "ar":  "أساسي — appx",
-                 "en":  "Core — appx"
+                 "ar":  "إزالة التطبيقات المثبّتة مسبقاً",
+                 "en":  "Remove preinstalled apps"
              },
     "category":  "debloat",
     "profiles":  [
@@ -293,9 +293,8 @@
                         "op":  "remove"
                     },
                     {
-                        "type":  "command",
-                        "exe":  "taskkill",
-                        "args":  "/f /im \"*teams*\""
+                        "type":  "kill",
+                        "name":  "*teams*"
                     },
                     {
                         "type":  "appx",
@@ -399,5 +398,9 @@
                         "scope":  "family",
                         "op":  "remove"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "يحذف تطبيقات المتجر المرفقة (الأخبار، الطقس، الألعاب، الإعلانات) لكل المستخدمين.",
+                        "en":  "Removes bundled Store apps (news, weather, games, promos) for all users."
+                    }
 }

@@ -47,14 +47,32 @@ struct Progress {
     total: usize,
     id: String,
     failed: bool,
+    /// One word for the live log: "applied" | "already" | "na" | "failed".
+    state: &'static str,
+}
+
+/// Summarise one tweak for the live log: any real error wins; otherwise it
+/// counts as applied if anything changed, else already/not-applicable.
+fn tweak_state(t: &exec::TweakOutcome) -> &'static str {
+    use azizos_engine::Status as S;
+    let has = |s: S| t.actions.iter().any(|a| a.status == s);
+    if t.failed() {
+        "failed"
+    } else if has(S::Applied) || has(S::Verified) || has(S::Skipped) {
+        "applied"
+    } else if has(S::AlreadyApplied) {
+        "already"
+    } else {
+        "na"
+    }
 }
 
 #[derive(Serialize)]
 struct ReportDto {
-    applied: usize,
-    failed: usize,
-    skipped: usize,
-    /// (tweak id, action index, reason incl. error code)
+    /// applied / already / not_applicable / failed / skipped (action totals)
+    counts: exec::Counts,
+    /// Only REAL errors: (tweak id, action index, reason incl. error code).
+    /// "Already applied" and "not on this Windows" are never listed here.
     failures: Vec<(String, usize, String)>,
     /// Folder on the Desktop holding report.txt + report.json (None if it could not be written).
     archive: Option<String>,
@@ -93,7 +111,7 @@ async fn run_plan(
             done += 1;
             let _ = emitter.emit(
                 "apply-progress",
-                Progress { done, total, id: t.id.clone(), failed: t.failed() },
+                Progress { done, total, id: t.id.clone(), failed: t.failed(), state: tweak_state(t) },
             );
         };
 
@@ -109,8 +127,7 @@ async fn run_plan(
         let archive = desktop
             .and_then(|d| report::write_archive(&d, &catalog, &sys, &selected, &report).ok())
             .map(|p| p.to_string_lossy().to_string());
-        let (applied, failed, skipped) = report.counts();
-        Ok(ReportDto { applied, failed, skipped, failures: report.failures(), archive })
+        Ok(ReportDto { counts: report.counts(), failures: report.failures(), archive })
     })
     .await
     .map_err(|e| e.to_string())?

@@ -129,5 +129,9 @@
                         "kind":  "dword",
                         "data":  1
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "سماعات ويدّات البلوتوث تتوقف.",
+                        "en":  "Bluetooth headsets and controllers stop working."
+                    }
 }

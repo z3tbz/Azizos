@@ -1,8 +1,8 @@
 {
     "id":  "core-scheduledtasks",
     "name":  {
-                 "ar":  "أساسي — scheduledtasks",
-                 "en":  "Core — scheduledtasks"
+                 "ar":  "المهام المجدولة",
+                 "en":  "Scheduled tasks"
              },
     "category":  "performance",
     "profiles":  [
@@ -18,5 +18,9 @@
                         "args":  "",
                         "runas":  "user_elevated"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "يعطّل مهام التتبّع والصيانة اللي تصحّي الجهاز.",
+                        "en":  "Disables telemetry and maintenance tasks that wake the PC."
+                    }
 }

@@ -1,12 +1,14 @@
 //! Windows backend for detection (`#[cfg(windows)]`) — strictly read-only.
 //!
 //! Cheapest source first:
-//!   * build / edition / GPU / Defender state -> registry reads (microseconds,
+//!   * build / edition / Defender state -> registry reads (microseconds,
 //!     no child process),
 //!   * AC / battery -> `GetSystemPowerStatus` via `windows-sys` (raw binding,
 //!     zero wrapper cost),
-//!   * system-disk media type and registered AV products -> one hidden
-//!     PowerShell call each (they live only in WMI/Storage).
+//!   * GPU vendor -> PCI vendor id in the display-class registry key,
+//!   * system-disk SSD/HDD -> DeviceIoControl on the system volume,
+//!   * registered AV products -> one hidden PowerShell call (they live only
+//!     in WMI SecurityCenter2, which has no lighter public interface).
 //! Nothing here changes the machine.
 
 use crate::catalog::SystemProfile;
@@ -65,37 +67,62 @@ pub(crate) fn normalize_edition(id: &str) -> String {
     tag.to_string()
 }
 
+/// PCI vendor of each display adapter, from the driver's `MatchingDeviceId`
+/// (`pci\ven_10de&dev_…`) — locale- and branding-independent, unlike the
+/// marketing name. A discrete GPU (NVIDIA / AMD) wins over integrated Intel.
 fn detect_gpu() -> Gpu {
     let Ok(class) = LOCAL_MACHINE.open(DISPLAY_CLASS) else { return Gpu::Any };
     let Ok(keys) = class.keys() else { return Gpu::Any };
-    let mut found = Gpu::Any;
+    let mut vendors = Vec::new();
     for sub in keys {
-        let Some(desc) = class.open(&sub).ok().and_then(|k| k.get_string("DriverDesc").ok()) else { continue };
-        let d = desc.to_ascii_lowercase();
-        // A discrete GPU wins over an integrated one.
-        if d.contains("nvidia") {
-            return Gpu::Nvidia;
-        } else if d.contains("amd") || d.contains("radeon") {
-            found = Gpu::Amd;
-        } else if d.contains("intel") && found == Gpu::Any {
-            found = Gpu::Intel;
-        }
+        let Ok(k) = class.open(&sub) else { continue };
+        let id = k.get_string("MatchingDeviceId").unwrap_or_default();
+        let desc = k.get_string("DriverDesc").unwrap_or_default();
+        vendors.push(gpu_vendor(&id, &desc));
     }
-    found
+    pick_gpu(&vendors)
 }
 
-fn detect_disk() -> Disk {
-    let media = ps_query(
-        "$n=(Get-Partition -DriveLetter $env:SystemDrive[0] -ErrorAction SilentlyContinue).DiskNumber;\
-         (Get-PhysicalDisk | Where-Object DeviceId -eq \"$n\" | Select-Object -First 1).MediaType",
-    )
-    .to_ascii_lowercase();
-    if media.contains("ssd") {
-        Disk::Ssd
-    } else if media.contains("hdd") {
-        Disk::Hdd
+pub(crate) fn gpu_vendor(matching_id: &str, desc: &str) -> Gpu {
+    let id = matching_id.to_ascii_lowercase();
+    if id.contains("ven_10de") {
+        return Gpu::Nvidia;
+    }
+    if id.contains("ven_1002") || id.contains("ven_1022") {
+        return Gpu::Amd;
+    }
+    if id.contains("ven_8086") {
+        return Gpu::Intel;
+    }
+    // No PCI id (rare: virtual/remote adapters) -> fall back to the name.
+    let d = desc.to_ascii_lowercase();
+    if d.contains("nvidia") {
+        Gpu::Nvidia
+    } else if d.contains("radeon") || d.contains("amd") {
+        Gpu::Amd
+    } else if d.contains("intel") {
+        Gpu::Intel
     } else {
-        Disk::Any
+        Gpu::Any
+    }
+}
+
+pub(crate) fn pick_gpu(v: &[Gpu]) -> Gpu {
+    for want in [Gpu::Nvidia, Gpu::Amd, Gpu::Intel] {
+        if v.contains(&want) {
+            return want;
+        }
+    }
+    Gpu::Any
+}
+
+/// System-drive media type straight from the storage driver
+/// (IOCTL_STORAGE_QUERY_PROPERTY / seek penalty) — no WMI, no PowerShell.
+fn detect_disk() -> Disk {
+    match crate::win32::system_disk_is_ssd() {
+        Some(true) => Disk::Ssd,
+        Some(false) => Disk::Hdd,
+        None => Disk::Any,
     }
 }
 
@@ -161,6 +188,27 @@ impl Detector for WindowsDetector {
 #[cfg(test)]
 mod tests {
     use super::normalize_edition as n;
+    use super::{gpu_vendor, pick_gpu};
+    use crate::schema::Gpu;
+
+    #[test]
+    fn gpu_by_pci_vendor() {
+        assert_eq!(gpu_vendor(r"pci\ven_10de&dev_2684", ""), Gpu::Nvidia);
+        assert_eq!(gpu_vendor(r"PCI\VEN_1002&DEV_744C", ""), Gpu::Amd);
+        assert_eq!(gpu_vendor(r"pci\ven_8086&dev_a780", ""), Gpu::Intel);
+        assert_eq!(gpu_vendor("", "Microsoft Basic Display Adapter"), Gpu::Any);
+        // laptop: Intel iGPU + NVIDIA dGPU -> NVIDIA
+        assert_eq!(pick_gpu(&[Gpu::Intel, Gpu::Nvidia]), Gpu::Nvidia);
+        assert_eq!(pick_gpu(&[Gpu::Any]), Gpu::Any);
+    }
+
+    #[test]
+    fn real_profile_reads() {
+        use crate::detect::Detector;
+        let p = super::WindowsDetector.profile().unwrap();
+        assert!(p.build >= 10240);
+        assert!(!p.edition.is_empty());
+    }
 
     #[test]
     fn editions_map_to_compat_tags() {

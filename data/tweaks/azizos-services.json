@@ -993,5 +993,9 @@
                         "kind":  "sz",
                         "data":  "Azizos"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "مجموعة خدمات مضبوطة من AZIZ لأجهزة الألعاب.",
+                        "en":  "AZIZ\u0027s tuned service set for gaming PCs."
+                    }
 }

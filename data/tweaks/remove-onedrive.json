@@ -19,19 +19,16 @@
                         "op":  "remove"
                     },
                     {
-                        "type":  "command",
-                        "exe":  "taskkill",
-                        "args":  "/f /im \"OneDriveStandaloneUpdater\""
+                        "type":  "kill",
+                        "name":  "OneDriveStandaloneUpdater"
                     },
                     {
-                        "type":  "command",
-                        "exe":  "taskkill",
-                        "args":  "/f /im \"OneDriveSetup\""
+                        "type":  "kill",
+                        "name":  "OneDriveSetup"
                     },
                     {
-                        "type":  "command",
-                        "exe":  "taskkill",
-                        "args":  "/f /im \"OneDrive*\""
+                        "type":  "kill",
+                        "name":  "OneDrive*"
                     },
                     {
                         "type":  "service",
@@ -40,8 +37,18 @@
                     },
                     {
                         "type":  "command",
-                        "exe":  "cmd.exe",
-                        "args":  "/c for %a in (\"SysWOW64\" \"System32\") do (if exist \"%windir%\\%~a\\OneDriveSetup.exe\" (\"%windir%\\%~a\\OneDriveSetup.exe\" /uninstall)) \u0026\u0026 reg delete \"HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}\" /f \u003e nul 2\u003e\u00261"
+                        "exe":  "cmd",
+                        "args":  "/c for %a in (\"SysWOW64\" \"System32\") do (if exist \"%windir%\\%~a\\OneDriveSetup.exe\" (\"%windir%\\%~a\\OneDriveSetup.exe\" /uninstall))"
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "delete_key",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "يزيل OneDrive. ملفاتك المحلية تبقى.",
+                        "en":  "Uninstalls OneDrive. Your local files stay."
+                    }
 }

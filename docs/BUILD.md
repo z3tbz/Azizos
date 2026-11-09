@@ -32,8 +32,8 @@ cargo build --release # يبني المحرّك (بايناري صغير)
 ```powershell
 # 1) حوّل البلاي بوك لصيغة Azizos (data/tweaks)
 powershell -File scripts/convert-playbook.ps1 -PlaybookRoot <مجلد البلاي بوك> -OutDir data/tweaks
-# 2) فهرس الواجهة الخفيف (ui/catalog.js)
-powershell -File scripts/build-ui-catalog.ps1
+# 2) الأسماء والأوصاف العربية/الإنجليزية من scripts/option-names.json + فهرس الواجهة (ui/catalog.js)
+powershell -File scripts/apply-names.ps1
 # 3) انسخ Executables إلى assets (تُدمج داخل الـ exe)
 powershell -File scripts/sync-assets.ps1 -PlaybookRoot <مجلد البلاي بوك>
 ```

@@ -39,5 +39,9 @@
                         "kind":  "dword",
                         "data":  1
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "ثيم داكن لويندوز والتطبيقات.",
+                        "en":  "Dark theme for Windows and apps."
+                    }
 }

@@ -63,5 +63,9 @@
                         "kind":  "dword",
                         "data":  1
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "الـVPN المدمج يتوقف. لا تختاره إذا تستخدم VPN.",
+                        "en":  "Built-in VPN stops working. Skip it if you use a VPN."
+                    }
 }

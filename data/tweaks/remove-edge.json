@@ -42,24 +42,20 @@
                         "path":  "C:\\\\Windows\\\\SystemApps\\\\Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe"
                     },
                     {
-                        "type":  "command",
-                        "exe":  "taskkill",
-                        "args":  "/f /im \"MicrosoftEdgeUpdate\""
+                        "type":  "kill",
+                        "name":  "MicrosoftEdgeUpdate"
                     },
                     {
-                        "type":  "command",
-                        "exe":  "taskkill",
-                        "args":  "/f /im \"msedge\""
+                        "type":  "kill",
+                        "name":  "msedge"
                     },
                     {
-                        "type":  "command",
-                        "exe":  "taskkill",
-                        "args":  "/f /im \"MicrosoftEdge*\""
+                        "type":  "kill",
+                        "name":  "MicrosoftEdge*"
                     },
                     {
-                        "type":  "command",
-                        "exe":  "taskkill",
-                        "args":  "/f /im \"setup\""
+                        "type":  "kill",
+                        "name":  "setup"
                     },
                     {
                         "type":  "bundled",
@@ -77,5 +73,9 @@
                         "op":  "delete",
                         "path":  "%ProgramFiles(x86)%\\\\Microsoft\\\\EdgeUpdate"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "يحذف Edge. ثبّت متصفح ثاني قبلها.",
+                        "en":  "Removes Edge. Install another browser first."
+                    }
 }

@@ -24,7 +24,10 @@ $tweaks = foreach ($f in Get-ChildItem (Join-Path $root 'data\tweaks') -Filter *
     risk            = if ($t.risk) { $t.risk } else { 'low' }
     requires_reboot = [bool]$t.requires_reboot
     actions_count   = @($t.actions).Count
+    # what kinds of change the tweak makes (shown on the card: full transparency)
+    kinds           = [ordered]@{}
   }
+  foreach ($g in (@($t.actions) | Group-Object type | Sort-Object Count -Descending)) { $o.kinds[$g.Name] = $g.Count }
   if ($t.description) { $o.description = $t.description }
   [pscustomobject]$o
 }

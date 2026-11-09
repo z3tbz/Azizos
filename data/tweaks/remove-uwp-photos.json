@@ -18,5 +18,9 @@
                         "scope":  "family",
                         "op":  "remove"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "عارض صور كلاسيكي سريع بدل تطبيق الصور.",
+                        "en":  "Fast classic photo viewer instead of the Photos app."
+                    }
 }

@@ -1,8 +1,8 @@
 {
     "id":  "core-registry",
     "name":  {
-                 "ar":  "أساسي — registry",
-                 "en":  "Core — registry"
+                 "ar":  "تعديلات الريجستري",
+                 "en":  "Registry tweaks"
              },
     "category":  "performance",
     "profiles":  [
@@ -104,7 +104,7 @@
                     },
                     {
                         "type":  "command",
-                        "exe":  "rundll32.exe",
+                        "exe":  "rundll32",
                         "args":  "fthsvc.dll,FthSysprepSpecialize"
                     },
                     {
@@ -3449,8 +3449,8 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKLM\\SYSTEM\\ControlSet001\\Control\\Session Manager\\Memory Management\\PrefetchParameters",
+                        "hive":  "hklm",
+                        "path":  "SYSTEM\\ControlSet001\\Control\\Session Manager\\Memory Management\\PrefetchParameters",
                         "name":  "EnablePrefetcher",
                         "kind":  "dword",
                         "data":  0
@@ -3458,8 +3458,8 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKLM\\SYSTEM\\ControlSet001\\Control\\Session Manager\\Memory Management\\PrefetchParameters",
+                        "hive":  "hklm",
+                        "path":  "SYSTEM\\ControlSet001\\Control\\Session Manager\\Memory Management\\PrefetchParameters",
                         "name":  "EnableSuperfetch",
                         "kind":  "dword",
                         "data":  0
@@ -3467,8 +3467,8 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKLM\\SYSTEM\\ControlSet001\\Control\\Session Manager\\Memory Management\\PrefetchParameters",
+                        "hive":  "hklm",
+                        "path":  "SYSTEM\\ControlSet001\\Control\\Session Manager\\Memory Management\\PrefetchParameters",
                         "name":  "SfTracingState",
                         "kind":  "dword",
                         "data":  0
@@ -3476,8 +3476,8 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKLM\\SYSTEM\\ControlSet001\\Control\\Session Manager\\Memory Management\\PrefetchParameters",
+                        "hive":  "hklm",
+                        "path":  "SYSTEM\\ControlSet001\\Control\\Session Manager\\Memory Management\\PrefetchParameters",
                         "name":  "EnableBootTrace",
                         "kind":  "dword",
                         "data":  0
@@ -3485,8 +3485,8 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\EMDMgmt",
+                        "hive":  "hklm",
+                        "path":  "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\EMDMgmt",
                         "name":  "GroupPolicyDisallowCaches",
                         "kind":  "dword",
                         "data":  1
@@ -3494,8 +3494,8 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\EMDMgmt",
+                        "hive":  "hklm",
+                        "path":  "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\EMDMgmt",
                         "name":  "AllowNewCachesByDefault",
                         "kind":  "dword",
                         "data":  0
@@ -3683,8 +3683,8 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings",
+                        "hive":  "hkcu",
+                        "path":  "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings",
                         "name":  "TaskbarEndTask",
                         "kind":  "dword",
                         "data":  1
@@ -3710,8 +3710,8 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
+                        "hive":  "hklm",
+                        "path":  "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
                         "name":  "TimerCoalescing",
                         "kind":  "binary",
                         "data":  "0000000000000000000000000000000000000000000000000000000000000000"
@@ -3719,8 +3719,8 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
+                        "hive":  "hklm",
+                        "path":  "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
                         "name":  "RITdemonTimerPowerSaveElapse",
                         "kind":  "dword",
                         "data":  0
@@ -3728,11 +3728,15 @@
                     {
                         "type":  "registry",
                         "op":  "set",
-                        "hive":  null,
-                        "path":  "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
+                        "hive":  "hklm",
+                        "path":  "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
                         "name":  "RITdemonTimerPowerSaveCoalescing",
                         "kind":  "dword",
                         "data":  0
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "قيم الخصوصية والتتبّع والواجهة وسرعة الاستجابة. تُحفظ القيم الأصلية قبل التعديل.",
+                        "en":  "Privacy, telemetry, UI and responsiveness values. Original values are saved first."
+                    }
 }

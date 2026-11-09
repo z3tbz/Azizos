@@ -12,13 +12,23 @@ path = "src/lib.rs"
 name = "azizos-cli"
 path = "src/main.rs"
 
+[features]
+# `native` = the real Windows API backends (exec_windows / detect_windows).
+# Off: the pure core (schema, catalog, exec, detect) builds and tests anywhere.
+default = ["native"]
+native = ["dep:windows-registry", "dep:windows-sys"]
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [target.'cfg(windows)'.dependencies]
 # Microsoft's safe registry wrapper (thin layer over the Reg* Win32 API).
-windows-registry = "0.6.1"
-# Raw bindings only (no wrapper cost) — just GetSystemPowerStatus.
-windows-sys = { version = "0.61.2", features = ["Win32_System_Power"] }
+windows-registry = { version = "0.6.1", optional = true }
+# Raw bindings only (no wrapper cost): SCM, Toolhelp, DeviceIoControl, power.
+windows-sys = { version = "0.61.2", optional = true, features = [
+  "Win32_Foundation", "Win32_Security", "Win32_System_Services", "Win32_System_Threading",
+  "Win32_System_Diagnostics_ToolHelp", "Win32_Storage_FileSystem", "Win32_System_IO",
+  "Win32_System_Ioctl", "Win32_System_Power",
+] }
 

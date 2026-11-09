@@ -17,5 +17,9 @@
                         "file":  "7zip.exe",
                         "args":  "/S"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "برنامج ضغط مجاني (يلزم تضمين المثبّت).",
+                        "en":  "Free archiver (installer must be bundled)."
+                    }
 }

@@ -7,3 +7,4 @@ scratch-assets/
 assets/
 target/
 app/gen/
+dist/

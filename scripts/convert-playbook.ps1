@@ -28,11 +28,12 @@ foreach ($p in $names.options.PSObject.Properties) { $OptMap[$p.Name] = $p.Value
 
 function Map-Hive([string]$p) {
   switch -regex ($p) {
-    '^HKEY_LOCAL_MACHINE\\' { return @('hklm', ($p -replace '^HKEY_LOCAL_MACHINE\\','')) }
-    '^HKEY_CURRENT_USER\\'  { return @('hkcu', ($p -replace '^HKEY_CURRENT_USER\\','')) }
-    '^HKEY_CLASSES_ROOT\\'  { return @('hkcr', ($p -replace '^HKEY_CLASSES_ROOT\\','')) }
-    '^HKEY_USERS\\'         { return @('hku',  ($p -replace '^HKEY_USERS\\','')) }
-    default                 { return @($null, $p) }
+    # long and short root names: HKEY_LOCAL_MACHINE\ and HKLM\ (both appear in playbooks)
+    '^(HKEY_LOCAL_MACHINE|HKLM)\\' { return @('hklm', ($p -replace '^(HKEY_LOCAL_MACHINE|HKLM)\\','')) }
+    '^(HKEY_CURRENT_USER|HKCU)\\'  { return @('hkcu', ($p -replace '^(HKEY_CURRENT_USER|HKCU)\\','')) }
+    '^(HKEY_CLASSES_ROOT|HKCR)\\'  { return @('hkcr', ($p -replace '^(HKEY_CLASSES_ROOT|HKCR)\\','')) }
+    '^(HKEY_USERS|HKU)\\'          { return @('hku',  ($p -replace '^(HKEY_USERS|HKU)\\','')) }
+    default                        { return @($null, $p) }
   }
 }
 function Map-RegKind([string]$t) {
@@ -68,6 +69,49 @@ function Add-Action($tweakId, $file, $isOption, $action) {
   [void]$script:actionsByTweak[$tweakId].Add($action)
 }
 
+# A command line the playbook ran through cmd.exe. Where it is really a registry,
+# file or environment change, emit that native action instead (no child process,
+# and the engine can tell "already applied" / "not present" from a real error).
+function Add-CmdLine($tweakId, $file, $isOption, [string]$line) {
+  $line = $line.Trim()
+  $q = { param($s) $s.Trim().Trim('"') }
+  # "<something> && reg delete "KEY" /f > nul 2>&1"  ->  <something> + delete_key
+  if ($line -match '^(.+?)\s*&&\s*reg(?:\.exe)?\s+delete\s+"([^"]+)"\s+/f(?:\s*>\s*nul(?:\s+2>&1)?)?\s*$') {
+    $first = $Matches[1]; $key = $Matches[2]
+    Add-CmdLine $tweakId $file $isOption $first
+    Add-CmdLine $tweakId $file $isOption ('reg delete "' + $key + '" /f')
+    return
+  }
+  if ($line -match '^reg(?:\.exe)?\s+delete\s+"?([^"]+?)"?\s+/f(?:\s*>\s*nul(?:\s+2>&1)?)?\s*$') {
+    $hv = Map-Hive $Matches[1]
+    if ($hv[0]) { Add-Action $tweakId $file $isOption ([ordered]@{ type='registry'; op='delete_key'; hive=$hv[0]; path=$hv[1] }); return }
+  }
+  if ($line -match '^setx\s+(\S+)\s+(.+)$') {
+    Add-Action $tweakId $file $isOption ([ordered]@{ type='env'; name=$Matches[1]; data=(& $q $Matches[2]); scope='user' }); return
+  }
+  if ($line -match '^ren\s+("[^"]+"|\S+)\s+("[^"]+"|\S+)$') {
+    $src = & $q $Matches[1]; $new = & $q $Matches[2]
+    $dir = $src.Substring(0, $src.LastIndexOf('\'))
+    Add-Action $tweakId $file $isOption ([ordered]@{ type='file'; op='rename'; path=$src; to=($dir + '\' + $new) }); return
+  }
+  # fsutil behavior set X N is exactly a FileSystem registry value
+  $fsKey = 'SYSTEM\CurrentControlSet\Control\FileSystem'
+  if ($line -match '^fsutil(?:\.exe)?\s+behavior\s+set\s+disablelastaccess\s+([0-3])$') {
+    # 0..3 -> 0x80000000 + n (user/system managed, enabled/disabled), as fsutil writes it
+    Add-Action $tweakId $file $isOption ([ordered]@{ type='registry'; op='set'; hive='hklm'; path=$fsKey; name='NtfsDisableLastAccessUpdate'; kind='dword'; data=([int64]2147483648 + [int64]$Matches[1]) }); return
+  }
+  if ($line -match '^fsutil(?:\.exe)?\s+behavior\s+set\s+disable8dot3\s+([0-3])$') {
+    Add-Action $tweakId $file $isOption ([ordered]@{ type='registry'; op='set'; hive='hklm'; path=$fsKey; name='NtfsDisable8dot3NameCreation'; kind='dword'; data=[int64]$Matches[1] }); return
+  }
+  if ($line -match '^(\S+?)(?:\.exe)?\s+(.*)$') {
+    $tool = $Matches[1]; $rest = $Matches[2]   # copy before the next -match overwrites $Matches
+    if ($tool -match '^(DISM|label|fsutil|rundll32|powercfg|sc|reg|bcdedit)$') {
+      Add-Action $tweakId $file $isOption ([ordered]@{ type='command'; exe=$tool; args=$rest }); return
+    }
+  }
+  Add-Action $tweakId $file $isOption ([ordered]@{ type='command'; exe='cmd'; args=('/c ' + $line) })
+}
+
 $cfgFiles = Get-ChildItem -Recurse -Path (Join-Path $PlaybookRoot 'Configuration') -Filter *.yml
 foreach ($f in $cfgFiles) {
   $lines = Get-Content -LiteralPath $f.FullName
@@ -98,6 +142,7 @@ foreach ($f in $cfgFiles) {
         if ($act.kind -eq 'dword' -or $act.kind -eq 'qword') {
           $n=0; if ([int64]::TryParse($data, [ref]$n)) { $act.data = $n } else { $act.data = "$data" }
         } else { $act.data = "$data" }
+        if (-not $hv[0]) { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body; why='unknown registry root'}); break }
         Add-Action $tweakId $f.BaseName ([bool]$opt) $act
       }
       'service' {
@@ -118,12 +163,13 @@ foreach ($f in $cfgFiles) {
         Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='file'; op='delete'; path=$path })
       }
       'taskKill' {
+        # in-process (Toolhelp API) in the engine — no taskkill.exe
         $nm = Get-Field $body 'name'
-        Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='command'; exe='taskkill'; args=("/f /im " + '"' + $nm + '"') })
+        Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='kill'; name=$nm })
       }
       'cmd' {
         $cmd = Get-Field $body 'command'
-        if ($cmd) { Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='command'; exe='cmd'; args=("/c " + $cmd) }) }
+        if ($cmd) { Add-CmdLine $tweakId $f.BaseName ([bool]$opt) $cmd }
         else { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}) }
       }
       'powerShell' {
@@ -148,8 +194,10 @@ foreach ($f in $cfgFiles) {
         if (-not $exe) { [void]$unconverted.Add(@{file=$f.Name; tag=$tag; body=$body}); break }
         if ($exe -match '^bcdedit(\.exe)?$') {
           Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='bcd'; args=$a })
+        } elseif ($exe -match '^cmd(\.exe)?$' -and $a -match '^/c\s+(.+)$') {
+          Add-CmdLine $tweakId $f.BaseName ([bool]$opt) $Matches[1]
         } elseif ($sysExe -contains $exe.ToLower()) {
-          Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='command'; exe=$exe; args=$a })
+          Add-CmdLine $tweakId $f.BaseName ([bool]$opt) ("$exe $a").Trim()
         } elseif ($ed -eq 'true' -or $exe -match '\.(bat|cmd|ps1|exe)$') {
           Add-Action $tweakId $f.BaseName ([bool]$opt) ([ordered]@{ type='bundled'; file=$exe; args=$a; runas=$runas })
         } else {
@@ -180,13 +228,18 @@ $written = 0
 foreach ($id in $actionsByTweak.Keys) {
   $acts = @($actionsByTweak[$id])
   $isOpt = $meta[$id].isOption
+  $desc = $null
   if ($isOpt -and $OptMap.ContainsKey($id)) {
     $o = $OptMap[$id]
     $name = @{ ar=$o.ar; en=$o.en }; $risk=$o.risk; $def=[bool]$o.default
   } else {
     $pretty = ($id -replace '^core-','')
-    $name = @{ ar=($corePrefix.ar + $pretty); en=($corePrefix.en + $pretty) }; $risk='low'; $def=$true
+    $o = $names.core.$pretty
+    if ($o) { $name = @{ ar=$o.ar; en=$o.en } }
+    else { $name = @{ ar=($corePrefix.ar + $pretty); en=($corePrefix.en + $pretty) } }
+    $risk='low'; $def=$true
   }
+  if ($o -and $o.desc_en) { $desc = @{ ar=$o.desc_ar; en=$o.desc_en } }
   $cat = switch -regex ($id) {
     'defender|uac|mitigation|spectre' { 'security'; break }
     'vpn|bluetooth|print|hyperv'      { 'devices'; break }
@@ -201,6 +254,7 @@ foreach ($id in $actionsByTweak.Keys) {
     id=$id; name=$name; category=$cat; profiles=@(); default=$def;
     requires_reboot=$reboot; risk=$risk; actions=$acts
   }
+  if ($desc) { $obj.Insert(2, 'description', $desc) }
   $json = $obj | ConvertTo-Json -Depth 8
   [IO.File]::WriteAllText((Join-Path $OutDir "$id.json"), $json, $utf8)
   $written++

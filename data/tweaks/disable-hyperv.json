@@ -42,5 +42,9 @@
                         "kind":  "dword",
                         "data":  1
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "أداء ألعاب أفضل؛ الأجهزة الافتراضية وWSL2 تتوقف.",
+                        "en":  "Better game performance; virtual machines and WSL2 stop working."
+                    }
 }

@@ -9,104 +9,137 @@
 </head>
 <body>
 <div class="window">
+  <!-- top: wordmark · step rail · language / theme -->
   <header class="topbar">
-    <div class="brand"><img src="logo.png" class="logo" alt="A/Z" /> <span>Azizos</span></div>
+    <div class="brand"><img src="logo.png" class="logo" alt="" /><span class="word">AZIZ<i>OS</i></span></div>
+    <ol class="rail" id="rail"></ol>
     <div class="top-actions">
-      <button id="langBtn" class="chip">EN</button>
-      <button id="themeBtn" class="chip">◐</button>
+      <button id="langBtn" class="chip" type="button">EN</button>
+      <button id="themeBtn" class="chip" type="button" aria-label="theme">◐</button>
     </div>
   </header>
 
   <div class="body">
-    <aside class="side">
-      <nav class="stepper" id="stepper"></nav>
+    <!-- playbook panel: always visible, like a cartridge label -->
+    <aside class="pb" aria-label="playbook">
+      <div class="pb-art"><img src="logo.png" alt="" /><span class="pb-ver">v1.0</span></div>
+      <h2 class="pb-name">Azizos Playbook</h2>
+      <p class="pb-by"><span data-i18n="by"></span> AZIZ</p>
+      <dl class="pb-facts">
+        <div><dt data-i18n="pb_target"></dt><dd>Windows 10 / 11</dd></div>
+        <div><dt data-i18n="pb_builds"></dt><dd class="num">19044 – 26300</dd></div>
+        <div><dt data-i18n="pb_tweaks"></dt><dd class="num" id="pbTweaks">0</dd></div>
+        <div><dt data-i18n="pb_offline"></dt><dd data-i18n="pb_offline_v"></dd></div>
+      </dl>
+      <div class="pb-sys">
+        <span class="eyebrow" data-i18n="this_pc"></span>
+        <div id="sysInfo" class="sys"></div>
+      </div>
+      <div class="pb-sel" id="pbSel" hidden>
+        <span class="eyebrow" data-i18n="selection"></span>
+        <div class="selbar"><b id="selCount">0</b><span>/</span><span id="selTotal">0</span></div>
+        <div class="meter"><i id="selMeter"></i></div>
+      </div>
     </aside>
 
     <main id="app">
-      <!-- Welcome -->
+      <!-- 1 · Welcome -->
       <section class="screen" data-screen="welcome">
         <div class="content">
-          <h1 data-i18n="welcome_title"></h1>
-          <p class="muted" data-i18n="welcome_sub"></p>
-          <ul class="bullets">
-            <li><i class="ic lock"></i><div><b data-i18n="b1_t"></b><span data-i18n="b1_d"></span></div></li>
-            <li><i class="ic shield"></i><div><b data-i18n="b2_t"></b><span data-i18n="b2_d"></span></div></li>
-            <li><i class="ic bolt"></i><div><b data-i18n="b3_t"></b><span data-i18n="b3_d"></span></div></li>
+          <span class="eyebrow gold" data-i18n="welcome_kicker"></span>
+          <h1 class="hero" data-i18n="welcome_title"></h1>
+          <p class="lead" data-i18n="welcome_sub"></p>
+          <ul class="feats">
+            <li><i class="glyph">01</i><b data-i18n="b1_t"></b><span data-i18n="b1_d"></span></li>
+            <li><i class="glyph">02</i><b data-i18n="b2_t"></b><span data-i18n="b2_d"></span></li>
+            <li><i class="glyph">03</i><b data-i18n="b3_t"></b><span data-i18n="b3_d"></span></li>
           </ul>
         </div>
         <footer class="navbar">
-          <span></span>
-          <button class="primary" data-next="preflight" data-i18n="start"></button>
+          <span class="muted small" data-i18n="free_note"></span>
+          <button class="primary" type="button" data-next="preflight" data-i18n="start"></button>
         </footer>
       </section>
 
-      <!-- Pre-flight -->
+      <!-- 2 · Requirements -->
       <section class="screen" data-screen="preflight" hidden>
         <div class="content">
           <h1 data-i18n="pre_title"></h1>
-          <p class="muted" data-i18n="pre_sub"></p>
-          <div id="reqList" class="reqlist"></div>
+          <p class="lead" data-i18n="pre_sub"></p>
+          <div id="reqList" class="reqgrid"></div>
         </div>
         <footer class="navbar">
-          <button class="ghost" data-next="welcome" data-i18n="back"></button>
-          <button class="primary" id="preNext" data-next="tweaks" data-i18n="next"></button>
+          <button class="ghost" type="button" data-next="welcome" data-i18n="back"></button>
+          <span class="navhint" id="preHint"></span>
+          <button class="primary" type="button" id="preNext" data-next="tweaks" data-i18n="next"></button>
         </footer>
       </section>
 
-      <!-- Tweaks -->
+      <!-- 3 · Options (one category per page) -->
       <section class="screen" data-screen="tweaks" hidden>
         <div class="content">
-          <h1 data-i18n="tw_title"></h1>
-          <p class="muted" data-i18n="tw_sub"></p>
-          <div class="profiles" id="profiles">
-            <span class="eyebrow" data-i18n="profile_label"></span>
-            <button class="prof" data-prof="balanced" data-i18n="prof_balanced"></button>
-            <button class="prof" data-prof="gaming" data-i18n="prof_gaming"></button>
-            <button class="prof" data-prof="custom" data-i18n="prof_custom"></button>
+          <div class="opthead">
+            <div>
+              <span class="eyebrow" id="pageNo"></span>
+              <h1 id="catTitle"></h1>
+            </div>
+            <div class="seg" id="profiles" role="group">
+              <button class="prof" type="button" data-prof="balanced" data-i18n="prof_balanced"></button>
+              <button class="prof" type="button" data-prof="gaming" data-i18n="prof_gaming"></button>
+              <button class="prof" type="button" data-prof="custom" data-i18n="prof_custom"></button>
+            </div>
           </div>
-          <div id="catList" class="catlist"></div>
+          <nav class="tabs" id="catTabs"></nav>
+          <div id="cardGrid" class="cards"></div>
         </div>
         <footer class="navbar">
-          <button class="ghost" data-next="preflight" data-i18n="back"></button>
-          <button class="primary" data-next="review" data-i18n="next"></button>
+          <button class="ghost" type="button" id="optBack" data-i18n="back"></button>
+          <span class="navhint" id="optHint"></span>
+          <button class="primary" type="button" id="optNext" data-i18n="next"></button>
         </footer>
       </section>
 
-      <!-- Review -->
+      <!-- 4 · Review -->
       <section class="screen" data-screen="review" hidden>
         <div class="content">
           <h1 data-i18n="rv_title"></h1>
+          <p class="lead" data-i18n="rv_sub"></p>
           <div id="reviewBody"></div>
-          <label class="switchrow">
-            <input type="checkbox" id="autoRestart" checked />
-            <span data-i18n="auto_restart"></span>
-          </label>
         </div>
         <footer class="navbar">
-          <button class="ghost" data-next="tweaks" data-i18n="back"></button>
-          <button class="primary" data-next="apply" id="applyBtn" data-i18n="apply"></button>
+          <button class="ghost" type="button" data-next="tweaks" data-i18n="back"></button>
+          <label class="toggle">
+            <input type="checkbox" id="autoRestart" checked />
+            <span class="track"><i></i></span>
+            <span data-i18n="auto_restart"></span>
+          </label>
+          <button class="primary" type="button" data-next="apply" id="applyBtn" data-i18n="apply"></button>
         </footer>
       </section>
 
-      <!-- Apply -->
+      <!-- 5 · Apply -->
       <section class="screen" data-screen="apply" hidden>
-        <div class="content">
-          <h1 data-i18n="ap_title"></h1>
-          <div class="pct" id="pct">0<small>%</small></div>
-          <div class="progwrap"><div class="progbar" id="progBar"></div></div>
-          <div class="statusline" id="statusLine"></div>
-          <div id="applyLog" class="applylog"></div>
+        <div class="content apply">
+          <div class="dial" id="dial" style="--p:0">
+            <div class="dial-in"><b id="pct">0</b><small>%</small></div>
+          </div>
+          <div class="apply-side">
+            <span class="eyebrow" data-i18n="ap_title"></span>
+            <div class="statusline" id="statusLine"></div>
+            <p class="muted small" data-i18n="ap_note"></p>
+            <div id="applyLog" class="applylog" aria-live="polite"></div>
+          </div>
         </div>
       </section>
 
-      <!-- Done -->
+      <!-- 6 · Done -->
       <section class="screen" data-screen="done" hidden>
         <div class="content">
           <div id="doneBody"></div>
         </div>
         <footer class="navbar">
           <span></span>
-          <button class="primary" id="finishBtn" data-i18n="finish"></button>
+          <button class="primary" type="button" id="finishBtn" data-i18n="finish"></button>
         </footer>
       </section>
     </main>

@@ -33,5 +33,9 @@
                         "kind":  "dword",
                         "data":  1
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "اختيار البلاي بوك الخاص بك. يترك الجهاز بدون مضاد الفيروسات المدمج.",
+                        "en":  "Your playbook\u0027s own choice. Leaves the PC without built-in antivirus."
+                    }
 }

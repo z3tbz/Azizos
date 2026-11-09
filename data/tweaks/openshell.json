@@ -13,14 +13,16 @@
     "risk":  "low",
     "actions":  [
                     {
-                        "type":  "command",
-                        "exe":  "cmd",
-                        "args":  "/c ren %WINDIR%\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.exe StartMenuExperienceHost.old"
+                        "type":  "file",
+                        "op":  "rename",
+                        "path":  "%WINDIR%\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.exe",
+                        "to":  "%WINDIR%\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.old"
                     },
                     {
-                        "type":  "command",
-                        "exe":  "cmd",
-                        "args":  "/c ren %WINDIR%\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\SearchHost.exe SearchHost.old"
+                        "type":  "file",
+                        "op":  "rename",
+                        "path":  "%WINDIR%\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\SearchHost.exe",
+                        "to":  "%WINDIR%\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\SearchHost.old"
                     },
                     {
                         "type":  "command",
@@ -248,5 +250,9 @@
                         "exe":  "cmd",
                         "args":  "/c openshell.bat"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "قائمة ابدأ كلاسيكية (يلزم تضمين المثبّت).",
+                        "en":  "Classic Start menu (installer must be bundled)."
+                    }
 }

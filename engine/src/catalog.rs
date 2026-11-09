@@ -256,6 +256,30 @@ mod tests {
         serde_json::from_str(&json).unwrap()
     }
 
+    /// The shipped catalog: loads, and on every supported edition nothing is
+    /// wrongly dropped as incompatible.
+    #[test]
+    fn real_catalog_plans_fully_on_every_edition() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/tweaks");
+        let docs: Vec<String> = std::fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .filter(|e| e.path().extension().map(|x| x == "json").unwrap_or(false))
+            .map(|e| std::fs::read_to_string(e.path()).unwrap())
+            .collect();
+        let cat = Catalog::from_json_docs(docs).expect("real catalog must load");
+        assert_eq!(cat.all().len(), 25);
+        let all: Vec<String> = cat.all().iter().map(|t| t.id.clone()).collect();
+        for (build, edition) in [(19044, "home"), (19045, "pro"), (22631, "enterprise"), (26100, "ltsc"), (26200, "iot"), (26100, "education")] {
+            let mut s = sys();
+            s.build = build;
+            s.edition = edition.into();
+            let plan = cat.plan(&all, &s).unwrap();
+            assert!(plan.skipped_incompatible.is_empty(), "{build}/{edition}: {:?}", plan.skipped_incompatible);
+            assert_eq!(plan.total(), 25);
+        }
+    }
+
     #[test]
     fn plans_with_deps_compat_and_phases() {
         let cat = Catalog::new(vec![

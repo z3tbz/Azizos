@@ -20,7 +20,7 @@ pub fn write_archive(
     let dir = desktop.join(format!("Azizos-Report-{stamp}"));
     std::fs::create_dir_all(&dir)?;
 
-    let (applied, failed, skipped) = report.counts();
+    let c = report.counts();
     let name = |id: &str| {
         catalog
             .get(id)
@@ -33,10 +33,17 @@ pub fn write_archive(
     t.push('\u{feff}');
     let _ = writeln!(t, "Azizos — {when}");
     let _ = writeln!(t, "Windows build {} · {} · {:?}\n", sys.build, sys.edition, sys.device);
-    let _ = writeln!(t, "Applied / طُبّق: {applied}    Failed / فشل: {failed}    Skipped / تُخطّي: {skipped}\n");
+    let _ = writeln!(t, "Applied / طُبّق: {}", c.applied);
+    let _ = writeln!(t, "Already applied / مطبّق مسبقاً: {}", c.already);
+    let _ = writeln!(t, "Not applicable / غير منطبق: {}", c.not_applicable);
+    let _ = writeln!(t, "Errors / أخطاء: {}", c.failed);
+    if c.skipped > 0 {
+        let _ = writeln!(t, "Skipped / تُخطّي: {}", c.skipped);
+    }
+    let _ = writeln!(t);
 
-    let _ = writeln!(t, "== Failures / الأخطاء ==");
-    if failed == 0 {
+    let _ = writeln!(t, "== Errors (real failures only) / الأخطاء الفعلية فقط ==");
+    if c.failed == 0 {
         let _ = writeln!(t, "none / لا يوجد");
     }
     for tw in &report.tweaks {
@@ -48,7 +55,7 @@ pub fn write_archive(
 
     let _ = writeln!(t, "\n== Not applicable on this PC / غير منطبق على هذا الجهاز ==");
     for tw in &report.tweaks {
-        let n = tw.actions.iter().filter(|a| a.status == Status::Skipped).count();
+        let n = tw.actions.iter().filter(|a| a.status == Status::NotApplicable).count();
         if n > 0 {
             let _ = writeln!(t, "[{}] {n}", name(&tw.id));
         }
@@ -68,7 +75,7 @@ pub fn write_archive(
         "generated": when,
         "system": sys,
         "selected": selected,
-        "counts": { "applied": applied, "failed": failed, "skipped": skipped },
+        "counts": c,
         "report": report,
     });
     std::fs::write(dir.join("report.json"), serde_json::to_vec_pretty(&json).unwrap_or_default())?;

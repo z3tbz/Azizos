@@ -1,8 +1,8 @@
 {
     "id":  "core-finaltasks",
     "name":  {
-                 "ar":  "أساسي — finaltasks",
-                 "en":  "Core — finaltasks"
+                 "ar":  "التنظيف النهائي",
+                 "en":  "Final clean-up"
              },
     "category":  "performance",
     "profiles":  [
@@ -50,7 +50,7 @@
                     },
                     {
                         "type":  "command",
-                        "exe":  "DISM.exe",
+                        "exe":  "DISM",
                         "args":  "/Online /set-reservedstoragestate /state:disabled"
                     },
                     {
@@ -58,5 +58,9 @@
                         "op":  "delete",
                         "path":  "%SystemDrive%\\\\Windows\\\\System32\\\\OneDriveSetup.exe"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "ينهي العمليات الخلفية المتبقية وينظّف الملفات المؤقتة.",
+                        "en":  "Ends leftover background processes and tidies temporary files."
+                    }
 }

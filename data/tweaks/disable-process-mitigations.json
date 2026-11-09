@@ -18,5 +18,9 @@
                         "args":  "",
                         "runas":  "user_elevated"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "مكسب بسيط في المعالج مقابل حماية أضعف من الثغرات.",
+                        "en":  "Small CPU gain, weaker exploit protection."
+                    }
 }

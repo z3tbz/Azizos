@@ -381,5 +381,9 @@
                         "kind":  "dword",
                         "data":  0
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "بدون تحديثات تلقائية. التحديث يصير يدوي.",
+                        "en":  "No automatic updates. You will update manually."
+                    }
 }

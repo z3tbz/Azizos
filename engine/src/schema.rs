@@ -99,7 +99,7 @@ impl Default for BuildRange {
 }
 
 /// Compatibility gate: a tweak is skipped (not failed) when it does not match.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Compat {
     #[serde(default)]
     pub builds: BuildRange,
@@ -118,13 +118,30 @@ impl Compat {
         vec!["any".to_string()]
     }
 }
+// Explicit (not derived): a tweak with no `compat` block must match every
+// edition. A derived Default would leave `editions` empty = match nothing.
+impl Default for Compat {
+    fn default() -> Self {
+        Compat {
+            builds: BuildRange::default(),
+            editions: Self::any_editions(),
+            device: Device::Any,
+            gpu: Gpu::Any,
+            disk: Disk::Any,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Hive {
+    #[serde(alias = "HKLM", alias = "HKEY_LOCAL_MACHINE")]
     Hklm,
+    #[serde(alias = "HKCU", alias = "HKEY_CURRENT_USER")]
     Hkcu,
+    #[serde(alias = "HKCR", alias = "HKEY_CLASSES_ROOT")]
     Hkcr,
+    #[serde(alias = "HKU", alias = "HKEY_USERS")]
     Hku,
 }
 
@@ -210,6 +227,11 @@ pub enum Action {
     },
     Device {
         op: String, // disable | enable
+        name: String,
+    },
+    /// End running processes by image name (`*` wildcards allowed, `.exe`
+    /// optional). Done in-process through the Toolhelp API — no taskkill.exe.
+    Kill {
         name: String,
     },
     Bcd {
@@ -362,6 +384,8 @@ mod tests {
         assert_eq!(t.display_name("ar"), "الوضع الداكن");
         assert_eq!(t.actions.len(), 1);
         assert!(t.compat.builds.contains(26100));
+        // no `compat` block => compatible with every edition (regression test)
+        assert_eq!(t.compat.editions, vec!["any".to_string()]);
     }
 
     #[test]

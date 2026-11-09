@@ -57,5 +57,9 @@
                         "kind":  "dword",
                         "data":  1
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "يوقف خدمة الطباعة. الطابعة ما راح تشتغل.",
+                        "en":  "Turns off the print spooler. Printing stops working."
+                    }
 }

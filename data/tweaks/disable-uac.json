@@ -27,5 +27,9 @@
                         "op":  "change",
                         "startup":  "disabled"
                     }
-                ]
+                ],
+    "description":  {
+                        "ar":  "بدون نوافذ تأكيد الصلاحيات. البرامج تاخذ صلاحية المسؤول بصمت.",
+                        "en":  "No elevation prompts. Programs get admin rights silently."
+                    }
 }

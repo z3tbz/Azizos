@@ -1,0 +1,55 @@
+{
+    "id":  "core-finaltasks",
+    "name":  {
+                 "ar":  "أساسي — finaltasks",
+                 "en":  "Core — finaltasks"
+             },
+    "category":  "performance",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  false,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "appx",
+                        "name":  "*Client.CBS*",
+                        "scope":  "family",
+                        "op":  "clear_cache"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*StartMenuExperienceHost*",
+                        "scope":  "family",
+                        "op":  "clear_cache"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Windows.Search*",
+                        "scope":  "family",
+                        "op":  "clear_cache"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*TCUI*",
+                        "scope":  "family",
+                        "op":  "clear_cache"
+                    },
+                    {
+                        "type":  "powershell",
+                        "script":  "\u0026 .\\Apply-AzizosWallpaper.ps1 -Style Horizon",
+                        "runas":  "user_elevated"
+                    },
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  null
+                    },
+                    {
+                        "type":  "powershell",
+                        "script":  "\u0026 .\\Launch-AzizOptimizer.ps1",
+                        "runas":  "user_elevated"
+                    }
+                ]
+}

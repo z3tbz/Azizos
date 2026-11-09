@@ -1,0 +1,61 @@
+{
+    "id":  "disable-print",
+    "name":  {
+                 "ar":  "تعطيل الطباعة",
+                 "en":  "Disable Printer"
+             },
+    "category":  "devices",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  true,
+    "risk":  "medium",
+    "actions":  [
+                    {
+                        "type":  "service",
+                        "name":  "PrintNotify",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "printworkflowusersvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "usbprint",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PrintScanBrokerService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Spooler",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PrintDeviceConfigurationService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Azizos",
+                        "name":  "DisablePrinter",
+                        "kind":  "dword",
+                        "data":  1
+                    }
+                ]
+}

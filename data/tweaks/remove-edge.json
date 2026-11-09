@@ -1,0 +1,75 @@
+{
+    "id":  "remove-edge",
+    "name":  {
+                 "ar":  "إزالة Microsoft Edge",
+                 "en":  "Remove Microsoft Edge"
+             },
+    "category":  "debloat",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  false,
+    "risk":  "medium",
+    "actions":  [
+                    {
+                        "type":  "appx",
+                        "name":  "*microsoft.microsoftedge.stable*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.MicrosoftEdge*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Edge*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.MicrosoftEdgeDevToolsClient*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  "C:\\\\Windows\\\\SystemApps\\\\Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "taskkill",
+                        "args":  "/f /im \"MicrosoftEdgeUpdate\""
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "taskkill",
+                        "args":  "/f /im \"msedge\""
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "taskkill",
+                        "args":  "/f /im \"MicrosoftEdge*\""
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "taskkill",
+                        "args":  "/f /im \"setup\""
+                    },
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  "%ProgramFiles(x86)%\\\\Microsoft\\\\Edge"
+                    },
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  "%ProgramFiles(x86)%\\\\Microsoft\\\\EdgeUpdate"
+                    }
+                ]
+}

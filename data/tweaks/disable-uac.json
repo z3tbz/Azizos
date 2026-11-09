@@ -1,0 +1,31 @@
+{
+    "id":  "disable-uac",
+    "name":  {
+                 "ar":  "تعطيل التحكم بحساب المستخدم (UAC)",
+                 "en":  "Disable User Account Control"
+             },
+    "category":  "security",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  true,
+    "risk":  "high",
+    "actions":  [
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hklm",
+                        "path":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+                        "name":  "EnableLUA",
+                        "kind":  "dword",
+                        "data":  0
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "luafv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    }
+                ]
+}

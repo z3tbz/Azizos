@@ -1,0 +1,133 @@
+{
+    "id":  "disable-bluetooth",
+    "name":  {
+                 "ar":  "تعطيل البلوتوث",
+                 "en":  "Disable Bluetooth"
+             },
+    "category":  "devices",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  true,
+    "risk":  "medium",
+    "actions":  [
+                    {
+                        "type":  "service",
+                        "name":  "BthA4dp",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BthEnum",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BthHFEnum",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BthLEEnum",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BTHMODEM",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Microsoft_Bluetooth_AvrcpTransport",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BluetoothUserService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BthAvctpSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "RFCOMM",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "bthserv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BTAGService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DevicesFlowUserSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BTHUSB",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BTHPORT",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BthMini",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "HidBth",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DeviceAssociationBroker",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DeviceAssociationService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Azizos",
+                        "name":  "DisableBluetooth",
+                        "kind":  "dword",
+                        "data":  1
+                    }
+                ]
+}

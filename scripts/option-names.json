@@ -1,0 +1,23 @@
+{
+  "corePrefix": { "ar": "أساسي — ", "en": "Core — " },
+  "options": {
+    "disable-defender":            { "en": "Disable Windows Defender",     "ar": "تعطيل مكافح الفيروسات (Defender)", "risk": "high",   "default": true  },
+    "disable-uac":                 { "en": "Disable User Account Control",  "ar": "تعطيل التحكم بحساب المستخدم (UAC)", "risk": "high",   "default": false },
+    "disable-process-mitigations": { "en": "Disable Process Mitigations",   "ar": "تعطيل تخفيفات العمليات",          "risk": "high",   "default": false },
+    "disable-spectre-meltdown":    { "en": "Disable Spectre And Meltdown",  "ar": "تعطيل حماية Spectre/Meltdown",    "risk": "high",   "default": false },
+    "enable-dark-mode":            { "en": "Dark Mode",                     "ar": "الوضع الداكن",                    "risk": "low",    "default": false },
+    "disable-vpn":                 { "en": "Disable VPN Services",          "ar": "تعطيل خدمات VPN",                 "risk": "medium", "default": false },
+    "legacy-context-menu":         { "en": "Legacy Context Menu (Win11)",   "ar": "قائمة السياق الكلاسيكية",          "risk": "low",    "default": false },
+    "remove-uwp-photos":           { "en": "Legacy Photo Viewer",           "ar": "عارض الصور الكلاسيكي",            "risk": "low",    "default": false },
+    "disable-print":               { "en": "Disable Printer",               "ar": "تعطيل الطباعة",                   "risk": "medium", "default": false },
+    "disable-bluetooth":           { "en": "Disable Bluetooth",             "ar": "تعطيل البلوتوث",                  "risk": "medium", "default": false },
+    "disable-wu":                  { "en": "Disable Windows Update",        "ar": "تعطيل تحديثات ويندوز",            "risk": "medium", "default": false },
+    "disable-powersave":           { "en": "Disable Extra Power Savings",   "ar": "تعطيل توفير الطاقة الإضافي",       "risk": "medium", "default": false },
+    "remove-edge":                 { "en": "Remove Microsoft Edge",         "ar": "إزالة Microsoft Edge",            "risk": "medium", "default": true  },
+    "remove-onedrive":             { "en": "Remove OneDrive",               "ar": "إزالة OneDrive",                  "risk": "low",    "default": true  },
+    "disable-hyperv":              { "en": "Disable Hyper-V and VBS",       "ar": "تعطيل Hyper-V و VBS",             "risk": "medium", "default": false },
+    "openshell":                   { "en": "Install Open-Shell",            "ar": "تثبيت Open-Shell",               "risk": "low",    "default": false },
+    "7zip":                        { "en": "7-Zip",                         "ar": "7-Zip",                          "risk": "low",    "default": false },
+    "azizos-services":             { "en": "Azizos Services",               "ar": "خدمات Azizos",                   "risk": "medium", "default": true  }
+  }
+}

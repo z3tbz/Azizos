@@ -1,0 +1,381 @@
+{
+    "id":  "core-appx",
+    "name":  {
+                 "ar":  "أساسي — appx",
+                 "en":  "Core — appx"
+             },
+    "category":  "debloat",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  false,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "appx",
+                        "name":  "*Disney*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Spotify*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*SecureAssessmentBrowser*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*PeopleExperienceHost*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.WindowsCamera*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*MicrosoftWindows.Client.WebExperience*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.WindowsAlarms*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.WindowsMaps*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.MicrosoftStickyNotes*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.People*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.BingNews*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*BingSearch*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.BingWeather*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.MicrosoftSolitaireCollection*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.WindowsFeedbackHub*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.GetHelp*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Getstarted*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*WebExperienceHost*",
+                        "scope":  "app",
+                        "op":  "unregister"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Todos*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.PowerAutomateDesktop*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.549981C3F5F10*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*MicrosoftCorporationII.QuickAssist*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*MicrosoftCorporationII.MicrosoftFamily*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.ZuneMusic*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.ZuneVideo*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.WindowsSoundRecorder*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Clipchamp.Clipchamp*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Whiteboard*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*microsoft.microsoftskydrive*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.MicrosoftTeamsforSurfaceHub*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*MicrosoftCorporationII.MailforSurfaceHub*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.MicrosoftPowerBIForWindows*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.SkypeApp*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.MicrosoftOfficeHub*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Office.Excel*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Office.PowerPoint*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Office.Word*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Windows.Client.CoreAI*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Office.OneNote*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*OutlookForWindows*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*OutlookPWA*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Microsoft3DViewer*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "Microsoft.Advertising*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*MixedReality.Portal*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.MSPaint*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "taskkill",
+                        "args":  "/f /im \"*teams*\""
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*MicrosoftTeams*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*MSTeams*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*DevHome*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*WindowsBackup*",
+                        "scope":  "app",
+                        "op":  "unregister"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Flipgrid*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Xbox*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.GamingApp*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.XboxApp*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.YourPhone*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*MicrosoftWindows.CrossDevice*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Windows.Ai.Copilot*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Copilot*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*MicrosoftWindows.Client.AIX*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*WindowsBackup*",
+                        "scope":  "app",
+                        "op":  "unregister"
+                    },
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Getstarted*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    }
+                ]
+}

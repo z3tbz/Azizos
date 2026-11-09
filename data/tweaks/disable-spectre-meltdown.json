@@ -1,0 +1,34 @@
+{
+    "id":  "disable-spectre-meltdown",
+    "name":  {
+                 "ar":  "تعطيل حماية Spectre/Meltdown",
+                 "en":  "Disable Spectre And Meltdown"
+             },
+    "category":  "security",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  false,
+    "risk":  "high",
+    "actions":  [
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hklm",
+                        "path":  "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management",
+                        "name":  "FeatureSettingsOverride",
+                        "kind":  "dword",
+                        "data":  3
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hklm",
+                        "path":  "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management",
+                        "name":  "FeatureSettingsOverrideMask",
+                        "kind":  "dword",
+                        "data":  3
+                    }
+                ]
+}

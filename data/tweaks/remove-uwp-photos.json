@@ -1,0 +1,22 @@
+{
+    "id":  "remove-uwp-photos",
+    "name":  {
+                 "ar":  "عارض الصور الكلاسيكي",
+                 "en":  "Legacy Photo Viewer"
+             },
+    "category":  "debloat",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  false,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "appx",
+                        "name":  "*Microsoft.Windows.Photos*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    }
+                ]
+}

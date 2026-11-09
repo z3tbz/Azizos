@@ -1,0 +1,34 @@
+{
+    "id":  "disable-hyperv",
+    "name":  {
+                 "ar":  "تعطيل Hyper-V و VBS",
+                 "en":  "Disable Hyper-V and VBS"
+             },
+    "category":  "devices",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  false,
+    "risk":  "medium",
+    "actions":  [
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hklm",
+                        "path":  "SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity",
+                        "name":  "Enabled",
+                        "kind":  "dword",
+                        "data":  0
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Azizos",
+                        "name":  "DisableHyperV",
+                        "kind":  "dword",
+                        "data":  1
+                    }
+                ]
+}

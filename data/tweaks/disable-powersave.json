@@ -1,0 +1,82 @@
+{
+    "id":  "disable-powersave",
+    "name":  {
+                 "ar":  "تعطيل توفير الطاقة الإضافي",
+                 "en":  "Disable Extra Power Savings"
+             },
+    "category":  "performance",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  true,
+    "risk":  "medium",
+    "actions":  [
+                    {
+                        "type":  "service",
+                        "name":  "acpipagr",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "GpuEnergyDrv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "AcpiPmi",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PRM",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "acpitime",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "bam",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "dam",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WmiAcpi",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "serenum",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "sermouse",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "serial",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    }
+                ]
+}

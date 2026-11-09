@@ -1,0 +1,42 @@
+{
+    "id":  "remove-onedrive",
+    "name":  {
+                 "ar":  "إزالة OneDrive",
+                 "en":  "Remove OneDrive"
+             },
+    "category":  "debloat",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  true,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "appx",
+                        "name":  "*OneDrive*",
+                        "scope":  "family",
+                        "op":  "remove"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "taskkill",
+                        "args":  "/f /im \"OneDriveStandaloneUpdater\""
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "taskkill",
+                        "args":  "/f /im \"OneDriveSetup\""
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "taskkill",
+                        "args":  "/f /im \"OneDrive*\""
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "OneSyncSvc*",
+                        "op":  "delete"
+                    }
+                ]
+}

@@ -1,0 +1,297 @@
+{
+    "id":  "core-services",
+    "name":  {
+                 "ar":  "أساسي — services",
+                 "en":  "Core — services"
+             },
+    "category":  "services",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  true,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "service",
+                        "name":  "diagnosticshub.standardcollector.service",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "diagsvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DiagTrack",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "dmwappushservice",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "lfsvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "MapsBroker",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "MessagingService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "OneSyncSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "RetailDemo",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SessionEnv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "TermService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Themes",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "TroubleshootingSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "UmRdpService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "wercplsupport",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WerSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PcaSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "wisvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WSearch",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "VacSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "UserDataSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "UnistoreSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "spectrum",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SpatialGraphFilter",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SharedRealitySvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SharedAccess",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SgrmBroker",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "sfloppy",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PimIndexMaintenanceSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "perceptionsimulation",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "MixedRealityOpenXRSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "MicrosoftEdgeElevationService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "FontCache3.0.0.0",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "flpydisk",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Filetrace",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "fdc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "edgeupdate",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "edgeupdatem",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "e1i68x64",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "midisrv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SysMain",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WSAIFabricSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "whesvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "cmd",
+                        "args":  "/c xcopy  \"PostInstall\" \"C:\\PostInstall\" /E /I /H /Y"
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Azizos",
+                        "name":  "Services",
+                        "kind":  "sz",
+                        "data":  "Default"
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Azizos",
+                        "name":  "DisablePrefetch",
+                        "kind":  "dword",
+                        "data":  1
+                    }
+                ]
+}

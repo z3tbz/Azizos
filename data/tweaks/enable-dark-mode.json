@@ -1,26 +1,43 @@
 {
-  "id": "enable-dark-mode",
-  "name": { "ar": "الوضع الداكن", "en": "Dark Mode" },
-  "description": {
-    "ar": "تفعيل المظهر الداكن للنظام والتطبيقات.",
-    "en": "Enable the dark theme for Windows and apps."
-  },
-  "category": "appearance",
-  "profiles": [],
-  "default": false,
-  "requires_reboot": false,
-  "risk": "low",
-  "actions": [
-    { "type": "registry", "hive": "HKCU",
-      "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-      "name": "AppsUseLightTheme", "kind": "dword", "data": 0 },
-    { "type": "registry", "hive": "HKCU",
-      "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-      "name": "SystemUsesLightTheme", "kind": "dword", "data": 0 }
-  ],
-  "verify": [
-    { "type": "registry", "hive": "HKCU",
-      "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-      "name": "AppsUseLightTheme", "equals": 0 }
-  ]
+    "id":  "enable-dark-mode",
+    "name":  {
+                 "ar":  "الوضع الداكن",
+                 "en":  "Dark Mode"
+             },
+    "category":  "appearance",
+    "profiles":  [
+
+                 ],
+    "default":  false,
+    "requires_reboot":  false,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                        "name":  "AppsUseLightTheme",
+                        "kind":  "dword",
+                        "data":  0
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                        "name":  "SystemUsesLightTheme",
+                        "kind":  "dword",
+                        "data":  0
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hklm",
+                        "path":  "SOFTWARE\\Azizos",
+                        "name":  "DarkMode",
+                        "kind":  "dword",
+                        "data":  1
+                    }
+                ]
 }

@@ -1,0 +1,46 @@
+{
+    "id":  "core-components",
+    "name":  {
+                 "ar":  "أساسي — components",
+                 "en":  "Core — components"
+             },
+    "category":  "performance",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  false,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\Memory Diagnostics Tool.lnk"
+                    },
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\ODBC Data Sources (32-bit).lnk"
+                    },
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\ODBC Data Sources (64-bit).lnk"
+                    },
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\System Configuration.lnk"
+                    },
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\RecoveryDrive.lnk"
+                    },
+                    {
+                        "type":  "file",
+                        "op":  "delete",
+                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\Defragment and Optimize Drives.lnk"
+                    }
+                ]
+}

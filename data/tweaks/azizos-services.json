@@ -1,0 +1,979 @@
+{
+    "id":  "azizos-services",
+    "name":  {
+                 "ar":  "خدمات Azizos",
+                 "en":  "Azizos Services"
+             },
+    "category":  "services",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  true,
+    "risk":  "medium",
+    "actions":  [
+                    {
+                        "type":  "service",
+                        "name":  "AppVClient",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "AJRouter",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "AppIDSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DsmSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DialogBlockingService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "autotimesvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "W32Time",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DPS",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "InventorySvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DsSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DusmSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "MsKeyboardFilter",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "icssvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "ShellHWDetection",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "TrkWks",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "tzautoupdate",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WdiSystemHost",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WdiServiceHost",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SensorDataService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SensrSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SensorService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Beep",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "cdfs",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "cdrom",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "acpiex",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "cnghwassist",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Telemetry",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "VerifierExt",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "udfs",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "MsLldp",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "lltdio",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "NDU",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "fvevol",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "UsoSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "cbdhsvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "BcastDVRUserService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "rdyboost",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "rdpbus",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "umbus",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vdrvroot",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Vid",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "CompositeBus",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "rspndr",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "NdisCap",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "NetBIOS",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "NetBT",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "spaceport",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "VaultSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "EventSystem",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "storqosflt",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "bowser",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WarpJITSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Wecsvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "GraphicsPerfSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WMPNetworkSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "3ware",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "arcsas",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "buttonconverter",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "circlass",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Dfsc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "ErrDev",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "mrxsmb",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "mrxsmb20",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PEAUTH",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "QWAVEdrv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "srv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SiSRaid2",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SiSRaid4",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Tcpip6",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "tcpipreg",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vsmraid",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "VSTXRAID",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "wcnfs",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WindowsTrustedRTProxy",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SSDPSRV",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SmsRouter",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "CldFlt",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "DisplayEnhancementService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "IpxlatCfgSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "NetTcpPortSharing",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "KtmRm",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "LanmanWorkstation",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "LanmanServer",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "lmhosts",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "MSDTC",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "QWAVE",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "RmSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vmickvpexchange",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vmicguestinterface",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vmicshutdown",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vmicheartbeat",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vmicvmsession",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vpci",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "TsUsbFlt",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "tsusbhub",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "storflt",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "RDPDR",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "RdpVideominiport",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "bttflt",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vmicrdv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vmictimesync",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vmicvss",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "hyperkbd",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "hypervideo",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "gencounter",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "vmgid",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "hvservice",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "hvcrash",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "HvHost",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "AxInstSV",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "AarSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "cloudidsvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "defragsvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "ehstorclass",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "ehstortcgdrv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "embeddedmode",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "FontCache",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "MSiSCSI",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Ndu",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "printworkflowusersvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PenService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "P9RdrService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PNRPsvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "p2psvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "p2pimsvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PhoneSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "PeerDistSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "RasAuto",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "RasAcd",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SCardSvr",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "ScDeviceEnum",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SCPolicySvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "scfilter",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "SEMgrSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "TapiSrv",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "terminpt",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "TsUsbGD",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "VSS",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WaaSMedicSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WalletService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "wbengine",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WpnService",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WbioSrvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WEPHOSTSVC",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WPDBusEnum",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "wdiservicehost",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "wdisystemhost",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "AppvStrm",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "AppvVemgr",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "AppvVfs",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "CimFS",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "CloudBackupRestoreSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "Parport",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "pcmcia",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "ReFS",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "refsdedupsvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "ReFSv1",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "UnionFS",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "service",
+                        "name":  "WpcMonSvc",
+                        "op":  "change",
+                        "startup":  "disabled"
+                    },
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Azizos",
+                        "name":  "Services",
+                        "kind":  "sz",
+                        "data":  "Azizos"
+                    }
+                ]
+}

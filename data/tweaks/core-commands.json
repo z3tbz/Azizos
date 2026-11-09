@@ -1,0 +1,61 @@
+{
+    "id":  "core-commands",
+    "name":  {
+                 "ar":  "أساسي — commands",
+                 "en":  "Core — commands"
+             },
+    "category":  "performance",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  false,
+    "risk":  "low",
+    "actions":  [
+                    {
+                        "type":  "command",
+                        "exe":  "cmd",
+                        "args":  "/c setx DOTNET_CLI_TELEMETRY_OPTOUT 1"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "cmd",
+                        "args":  "/c setx DOTNET_TRY_CLI_TELEMETRY_OPTOUT 1"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "cmd",
+                        "args":  "/c setx CLOUDSDK_CORE_DISABLE_PROMPTS 1"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "cmd",
+                        "args":  "/c setx DOCKER_CLI_TELEMETRY_OPTOUT 1"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "cmd",
+                        "args":  "/c setx npm_config_loglevel silent"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "cmd",
+                        "args":  "/c setx VS_TELEMETRY_OPT_OUT 1"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "cmd",
+                        "args":  "/c xcopy \"Windows\" \"%windir%\" /E /I /Y"
+                    },
+                    {
+                        "type":  "command",
+                        "exe":  "cmd",
+                        "args":  "/c vcpp.exe /ai"
+                    },
+                    {
+                        "type":  "powershell",
+                        "script":  "\u0026 .\\Install-AzizOptimizer.ps1",
+                        "runas":  "user_elevated"
+                    }
+                ]
+}

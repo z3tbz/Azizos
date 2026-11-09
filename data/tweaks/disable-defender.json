@@ -1,0 +1,25 @@
+{
+    "id":  "disable-defender",
+    "name":  {
+                 "ar":  "تعطيل مكافح الفيروسات (Defender)",
+                 "en":  "Disable Windows Defender"
+             },
+    "category":  "security",
+    "profiles":  [
+
+                 ],
+    "default":  true,
+    "requires_reboot":  false,
+    "risk":  "high",
+    "actions":  [
+                    {
+                        "type":  "registry",
+                        "op":  "set",
+                        "hive":  "hkcu",
+                        "path":  "SOFTWARE\\Azizos",
+                        "name":  "DisableDefender",
+                        "kind":  "dword",
+                        "data":  1
+                    }
+                ]
+}

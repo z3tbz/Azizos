@@ -259,6 +259,167 @@ pub fn system_disk_is_ssd() -> Option<bool> {
     Some(d.incurs_seek_penalty == 0)
 }
 
+// ---------------------------------------------------------------- power plan --
+
+use windows_sys::core::GUID;
+use windows_sys::Win32::Foundation::LocalFree;
+use windows_sys::Win32::System::Power::{PowerImportPowerScheme, PowerSetActiveScheme};
+
+fn guid_to_string(g: &GUID) -> String {
+    format!(
+        "{{{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
+        g.data1,
+        g.data2,
+        g.data3,
+        g.data4[0],
+        g.data4[1],
+        g.data4[2],
+        g.data4[3],
+        g.data4[4],
+        g.data4[5],
+        g.data4[6],
+        g.data4[7]
+    )
+}
+
+/// `powercfg -import <path>` then, if `activate`, `-setactive` — straight
+/// through powrprof.dll (the DLL powercfg.exe itself calls), no child process.
+/// The activated GUID is always the one Windows actually assigned on import
+/// (read back from the API), never a guessed/hard-coded one, so it can never
+/// activate the wrong scheme. Returns the imported scheme's GUID string.
+pub fn import_power_scheme(path: &str, activate: bool) -> Result<String, String> {
+    let wide_path = wide(path);
+    let mut dest: *mut GUID = std::ptr::null_mut();
+    // SAFETY: rootpowerkey is reserved/NULL per MSDN; dest receives an
+    // LocalAlloc'd GUID we must LocalFree once we're done reading it.
+    let err = unsafe { PowerImportPowerScheme(std::ptr::null_mut(), wide_path.as_ptr(), &mut dest) };
+    if err != 0 {
+        return Err(format!("PowerImportPowerScheme: {}", win32_msg(err)));
+    }
+    if dest.is_null() {
+        return Err("PowerImportPowerScheme: no scheme GUID returned".into());
+    }
+    let guid = unsafe { *dest };
+    let text = guid_to_string(&guid);
+
+    let activate_result = activate.then(|| {
+        let e = unsafe { PowerSetActiveScheme(std::ptr::null_mut(), &guid) };
+        (e == 0).then_some(()).ok_or_else(|| format!("PowerSetActiveScheme: {}", win32_msg(e)))
+    });
+
+    unsafe { LocalFree(dest as _) };
+
+    match activate_result {
+        Some(Err(e)) => Err(e),
+        _ => Ok(text),
+    }
+}
+
+// -------------------------------------------------------------------- device --
+
+use windows_sys::Win32::Devices::DeviceAndDriverInstallation::{
+    SetupDiCallClassInstaller, SetupDiDestroyDeviceInfoList, SetupDiEnumDeviceInfo, SetupDiGetClassDevsW,
+    SetupDiGetDeviceRegistryPropertyW, SetupDiSetClassInstallParamsW, DICS_DISABLE, DICS_ENABLE, DICS_FLAG_GLOBAL,
+    DIF_PROPERTYCHANGE, DIGCF_ALLCLASSES, DIGCF_PRESENT, HDEVINFO, SPDRP_DEVICEDESC, SPDRP_FRIENDLYNAME,
+    SP_CLASSINSTALL_HEADER, SP_DEVINFO_DATA, SP_PROPCHANGE_PARAMS,
+};
+
+const INVALID_HDEVINFO: HDEVINFO = -1;
+
+/// Closes a SetupAPI device-info-set handle on drop.
+struct DevInfoSet(HDEVINFO);
+impl Drop for DevInfoSet {
+    fn drop(&mut self) {
+        if self.0 != INVALID_HDEVINFO {
+            unsafe { SetupDiDestroyDeviceInfoList(self.0) };
+        }
+    }
+}
+
+fn device_display_name(set: HDEVINFO, info: &SP_DEVINFO_DATA) -> String {
+    for prop in [SPDRP_FRIENDLYNAME, SPDRP_DEVICEDESC] {
+        let mut buf = [0u16; 512];
+        let mut needed = 0u32;
+        let ok = unsafe {
+            SetupDiGetDeviceRegistryPropertyW(
+                set,
+                info,
+                prop,
+                std::ptr::null_mut(),
+                buf.as_mut_ptr() as *mut u8,
+                (buf.len() * 2) as u32,
+                &mut needed,
+            )
+        };
+        if ok != 0 {
+            let len = buf.iter().position(|&c| c == 0).unwrap_or(buf.len());
+            if len > 0 {
+                return String::from_utf16_lossy(&buf[..len]);
+            }
+        }
+    }
+    String::new()
+}
+
+/// Enable/disable every present device whose friendly name (falling back to
+/// its device description) matches `pattern` (`*` glob, same rules as
+/// `image_matches`) — `SetupDiSetClassInstallParamsW` + `SetupDiCallClassInstaller`
+/// with `DIF_PROPERTYCHANGE`, exactly what Device Manager's own Disable/Enable
+/// does, no PowerShell involved. Returns (matched, changed, first error).
+pub fn set_device_enabled(pattern: &str, enable: bool) -> (usize, usize, Option<String>) {
+    let set = DevInfoSet(unsafe {
+        SetupDiGetClassDevsW(std::ptr::null(), std::ptr::null(), std::ptr::null_mut(), DIGCF_PRESENT | DIGCF_ALLCLASSES)
+    });
+    if set.0 == INVALID_HDEVINFO {
+        return (0, 0, Some(format!("SetupDiGetClassDevsW: {}", win32_msg(unsafe { GetLastError() }))));
+    }
+
+    let (mut matched, mut changed, mut err) = (0usize, 0usize, None);
+    let mut index = 0u32;
+    loop {
+        let mut info: SP_DEVINFO_DATA = unsafe { std::mem::zeroed() };
+        info.cbSize = std::mem::size_of::<SP_DEVINFO_DATA>() as u32;
+        if unsafe { SetupDiEnumDeviceInfo(set.0, index, &mut info) } == 0 {
+            break; // ERROR_NO_MORE_ITEMS
+        }
+        index += 1;
+
+        let name = device_display_name(set.0, &info);
+        if name.is_empty() || !glob(pattern, &name) {
+            continue;
+        }
+        matched += 1;
+
+        let params = SP_PROPCHANGE_PARAMS {
+            ClassInstallHeader: SP_CLASSINSTALL_HEADER {
+                cbSize: std::mem::size_of::<SP_CLASSINSTALL_HEADER>() as u32,
+                InstallFunction: DIF_PROPERTYCHANGE,
+            },
+            StateChange: if enable { DICS_ENABLE } else { DICS_DISABLE },
+            Scope: DICS_FLAG_GLOBAL,
+            HwProfile: 0,
+        };
+        // SAFETY: SP_PROPCHANGE_PARAMS starts with the SP_CLASSINSTALL_HEADER
+        // SetupDiSetClassInstallParamsW expects — the documented pattern for
+        // passing an extended classinstall-params struct.
+        let ok = unsafe {
+            SetupDiSetClassInstallParamsW(
+                set.0,
+                &info,
+                &params as *const SP_PROPCHANGE_PARAMS as *const SP_CLASSINSTALL_HEADER,
+                std::mem::size_of::<SP_PROPCHANGE_PARAMS>() as u32,
+            ) != 0
+                && SetupDiCallClassInstaller(DIF_PROPERTYCHANGE, set.0, &info) != 0
+        };
+        if ok {
+            changed += 1;
+        } else if err.is_none() {
+            err = Some(format!("{name}: {}", win32_msg(unsafe { GetLastError() })));
+        }
+    }
+    (matched, changed, err)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -297,4 +458,26 @@ mod tests {
         // just must not crash; value depends on the hardware
         let _ = system_disk_is_ssd();
     }
+
+    #[test]
+    fn guid_formats_like_windows() {
+        let g = GUID { data1: 0x381b4222, data2: 0xf694, data3: 0x41f0, data4: [0x96, 0x85, 0xff, 0x5b, 0xb2, 0x60, 0xdf, 0x2e] };
+        assert_eq!(guid_to_string(&g), "{381B4222-F694-41F0-9685-FF5BB260DF2E}");
+    }
+
+    // import_power_scheme itself is not exercised here: it writes a real power
+    // scheme to this machine, which is outside what an automated test should do.
+
+    #[test]
+    fn device_enum_finds_nothing_for_a_bogus_pattern() {
+        // Real SetupDiGetClassDevsW enumeration on this machine, but a pattern
+        // nothing can match: exercises the whole walk read-only, changes nothing.
+        let (matched, changed, err) = set_device_enabled("Azizos-No-Such-Device-*", false);
+        assert_eq!(matched, 0);
+        assert_eq!(changed, 0);
+        assert!(err.is_none());
+    }
+
+    // set_device_enabled with a matching pattern is not exercised here: it
+    // would actually enable/disable a real device on this machine.
 }

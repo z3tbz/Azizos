@@ -11,7 +11,7 @@
     },
     {
         "tweak":  "7zip",
-        "url":  "",
+        "url":  "https://github.com/ip7z/7zip/releases/download/26.06/7z2606-x64.exe",
         "file":  "7zip.exe"
     }
 ]

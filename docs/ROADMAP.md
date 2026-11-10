@@ -4,33 +4,38 @@
 
 | الجزء | الحالة |
 |---|---|
-| المحرّك (schema/catalog/exec/detect) | ✅ مكتمل ومختبَر (13 اختبار + الكتالوج الحقيقي على 6 نسخ ويندوز) |
-| طبقة ويندوز (registry/SCM/Toolhelp/IOCTL) | ✅ مكتوبة ومفحوصة نوعياً على `x86_64-pc-windows-msvc`؛ تشغيل اختباراتها يحتاج MSVC Build Tools |
+| المحرّك (schema/catalog/exec/detect) | ✅ مكتمل ومختبَر |
+| طبقة ويندوز (registry/SCM/Toolhelp/IOCTL/powrprof/SetupAPI/WinRT) | ✅ **33 اختبار حقيقي ناجح على هذا الجهاز** (ليس فحص أنواع فقط) — registry/SSD/GPU/power/appx كلها تُقرأ فعلياً |
+| appx عبر WinRT `PackageManager` | ✅ `engine/src/appx.rs` — صفر PowerShell، صفر عمليات فرعية |
+| الطاقة عبر `powrprof.dll` | ✅ `PowerImportPowerScheme`/`PowerSetActiveScheme` مباشرة |
+| الأجهزة عبر SetupAPI | ✅ `DIF_PROPERTYCHANGE` مباشرة (نفس ما يسويه Device Manager) |
+| المهام المجدولة عبر COM (`ITaskService`) | ⏳ مؤجّل — ولا تويك حالي يستخدم `scheduled_task` (التعطيل الحالي عبر الريجستري/appx)، فأجّلناه لما يصير له استخدام فعلي |
 | حالات صادقة (طُبّق/مطبّق مسبقاً/غير منطبق/خطأ) | ✅ في المحرّك والتقرير والواجهة |
-| الواجهة | ✅ تصميم جديد بأسلوب AME (لوحة البلاي بوك، بطاقات المتطلّبات، صفحات الخيارات، عدّاد دائري) بهوية AZIZ |
-| التويكات | ✅ 25 تويك / 883 إجراء محوّلة من البلاي بوك |
-| الأصول الناقصة | ⚠️ `vcpp.exe`, `OpenShell.exe`, `7zip.exe` لازم تنضاف لـ `assets/` |
-| الإصلاح التلقائي للمتطلّبات | ⚠️ `data/preflight.json` فاضي — يحتاج اسم سكربتك |
+| الواجهة | ✅ تصميم بأسلوب AME بهوية AZIZ |
+| التويكات | ✅ 25 تويك / 883 إجراء |
+| تثبيت .exe حقيقي (Tauri + NSIS) | ✅ **تم فعلياً على هذا الجهاز** — `target\release\azizos-app.exe` (~48MB) و`target\release\bundle\nsis\Azizos_0.0.5_x64-setup.exe` |
+| أصول المثبّتات الثلاثة | ✅ محمّلة ومدمجة (`scripts/fetch-vendor-assets.ps1`) |
+| دمج الأصول في الـ exe | ✅ **مُصلَح**: كان يدمج كل مجلد assets (٦٢ ميقا بلا داعٍ، فيها ملفات .sys وتنفيذيات ما يستخدمها أي تويك)؛ الآن `build.rs` يدمج فقط ما يفتحه تويك فعلياً بالاسم |
+| الإصلاح التلقائي للمتطلّبات | ⏸️ مؤجّل بطلبك — الربط مع `DisableDefender.ps1` جاهز لما تقول |
 
 ## المرحلة 1 — قبل أول إصدار عام
 
-1. **تثبيت MSVC Build Tools على جهاز البناء** ثم `cargo test -p azizos-engine` (يشغّل اختبارات ويندوز الحقيقية) و`cargo tauri build`.
+1. ~~تثبيت MSVC Build Tools~~ ✅ كان موجود أصلاً على الجهاز (Visual Studio Community).
 2. **تجربة على VM لكل نسخة**: 10 22H2 Home · 11 23H2 Pro · 11 24H2 LTSC/IoT · بناء 26xxx. المطلوب: صفر «خطأ» على نظام نظيف، وكله «مطبّق مسبقاً» في التشغيل الثاني.
 3. **توقيع رقمي** (Authenticode، ويفضّل EV أو Azure Trusted Signing) — يقلّل إنذارات SmartScreen ويكشف أي نسخة معدّلة.
-4. **تحويل المستودع إلى خاص** (انظر «الحماية من التسريب»).
 
 ## المرحلة 2 — طبقات أخف (بدون عمليات خارجية)
 
-| اليوم | الأفضل | الفائدة |
+| اليوم | الأفضل | الحالة |
 |---|---|---|
-| `powercfg.exe` | `powrprof.dll`: `PowerImportPowerScheme` + `PowerWriteACValueIndex` + `PowerSetActiveScheme` | داخل العملية، رموز خطأ دقيقة |
-| `schtasks.exe` | COM `ITaskService` (`TaskScheduler`) | تعطيل/حذف بدون عملية، تحقق مباشر |
-| `Remove-AppxPackage` (PowerShell) | WinRT `PackageManager.RemovePackageAsync` + `DeprovisionPackageForAllUsersAsync`، **تجميع** كل التطبيقات في نداء واحد | من ~70 عملية PowerShell إلى صفر |
-| `Disable-PnpDevice` | SetupAPI `SetupDiSetClassInstallParams` + `DIF_PROPERTYCHANGE` | بدون PowerShell |
-| الشبكة (`netsh`, سكربتات) | ريجستري `Tcpip\Parameters\Interfaces\{GUID}` + IP Helper API (`GetAdaptersAddresses`) | لكل كرت شبكة على حدة، بدون أوامر |
-| NVIDIA | مفاتيح فئة الدرايفر (`Control\Class\{4d36e968…}\000X`) للقيم المعروفة؛ وإعدادات البروفايل عبر NVAPI DRS (`nvapi64.dll` يُحمّل ديناميكياً فقط إذا الكرت NVIDIA) | بدون Profile Inspector خارجي |
-| `bcdedit.exe` | **يبقى** | واجهة BCD WMI أثقل وأقل وضوحاً؛ bcdedit هو الأداة الرسمية |
-| `fsutil`/`label`/`DISM` | `SetVolumeLabelW` للـ label؛ DISM API (`dismapi.dll`) للمكوّنات | أقل عمليات |
+| `powercfg.exe` | `powrprof.dll`: `PowerImportPowerScheme` + `PowerSetActiveScheme` | ✅ تم |
+| `Disable-PnpDevice` (PowerShell) | SetupAPI `SetupDiSetClassInstallParams` + `DIF_PROPERTYCHANGE` | ✅ تم |
+| `Remove-AppxPackage` (PowerShell) | WinRT `PackageManager.RemovePackageAsync` + `DeprovisionPackageForAllUsersAsync` | ✅ تم |
+| `schtasks.exe` | COM `ITaskService` (`TaskScheduler`) | ⏳ مؤجّل (لا استخدام حالي) |
+| الشبكة (`netsh`, سكربتات) | ريجستري `Tcpip\Parameters\Interfaces\{GUID}` + IP Helper API (`GetAdaptersAddresses`) | لم يُبدأ |
+| NVIDIA | مفاتيح فئة الدرايفر للقيم المعروفة؛ البروفايل عبر NVAPI DRS | لم يُبدأ |
+| `bcdedit.exe` | **يبقى** — واجهة BCD WMI أثقل وأقل وضوحاً | — |
+| `fsutil`/`label`/`DISM` | `SetVolumeLabelW`؛ DISM API (`dismapi.dll`) | لم يُبدأ |
 
 ## المرحلة 3 — مزايا
 

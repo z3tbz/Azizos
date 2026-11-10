@@ -16,7 +16,7 @@ path = "src/main.rs"
 # `native` = the real Windows API backends (exec_windows / detect_windows).
 # Off: the pure core (schema, catalog, exec, detect) builds and tests anywhere.
 default = ["native"]
-native = ["dep:windows-registry", "dep:windows-sys"]
+native = ["dep:windows-registry", "dep:windows-sys", "dep:windows", "dep:windows-future"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -29,6 +29,13 @@ windows-registry = { version = "0.6.1", optional = true }
 windows-sys = { version = "0.61.2", optional = true, features = [
   "Win32_Foundation", "Win32_Security", "Win32_System_Services", "Win32_System_Threading",
   "Win32_System_Diagnostics_ToolHelp", "Win32_Storage_FileSystem", "Win32_System_IO",
-  "Win32_System_Ioctl", "Win32_System_Power",
+  "Win32_System_Ioctl", "Win32_System_Power", "Win32_System_Registry",
+  "Win32_Devices_DeviceAndDriverInstallation", "Win32_Devices_Properties",
 ] }
+# Typed COM/WinRT (PackageManager for appx removal, no PowerShell/process per
+# app) — only pulled in where windows-sys's plain-C bindings aren't enough.
+windows = { version = "0.62.2", optional = true, features = [
+  "Management_Deployment", "ApplicationModel", "Win32_System_WinRT",
+] }
+windows-future = { version = "0.3.2", optional = true, default-features = false }
 

@@ -39,7 +39,7 @@ pub struct WindowsBackend {
     /// Where bundled assets (the playbook's scripts, tools, installers) live.
     pub asset_dir: PathBuf,
     /// Installed + provisioned Appx package full names, read once per run.
-    appx_cache: Option<Vec<String>>,
+    appx_cache: Option<Vec<crate::appx::PackageRef>>,
 }
 
 impl WindowsBackend {
@@ -194,23 +194,6 @@ fn svc_path(name: &str) -> String {
 
 // ------------------------------------------------------- other light reads --
 
-/// Package full names known to Windows (installed for any user + provisioned),
-/// read from the registry — no PowerShell, no Appx API activation.
-fn appx_packages() -> Vec<String> {
-    let mut out = Vec::new();
-    for path in [
-        r"SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\PackageRepository\Packages",
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\Applications",
-    ] {
-        if let Ok(k) = windows_registry::LOCAL_MACHINE.open(path) {
-            if let Ok(keys) = k.keys() {
-                out.extend(keys);
-            }
-        }
-    }
-    out
-}
-
 /// Does a package name/pattern (e.g. `*Disney*`, `Microsoft.BingNews`) match a
 /// package full name (`Name_Version_Arch_Res_Publisher`)?
 fn appx_match(pattern: &str, full: &str) -> bool {
@@ -315,10 +298,6 @@ pub(crate) fn encode_ps(script: &str) -> String {
         out.push(if c.len() > 2 { T[n as usize & 63] as char } else { '=' });
     }
     out
-}
-
-fn ps_quote(s: &str) -> String {
-    format!("'{}'", s.replace('\'', "''"))
 }
 
 impl WindowsBackend {
@@ -467,20 +446,39 @@ impl Backend for WindowsBackend {
 
             Action::Appx { name, scope: _, op } => match op.as_str() {
                 "remove" | "unregister" => {
-                    let known = self.appx_cache.get_or_insert_with(appx_packages);
-                    // An empty list means the registry could not be read: don't guess, run it.
-                    if !known.is_empty() && !known.iter().any(|p| appx_match(name, p)) {
+                    let known = match &self.appx_cache {
+                        Some(k) => k,
+                        None => {
+                            let k = crate::appx::list_packages().map_err(|e| format!("{name}: {e}"))?;
+                            self.appx_cache.insert(k)
+                        }
+                    };
+                    let hits: Vec<(String, String)> = known
+                        .iter()
+                        .filter(|p| appx_match(name, &p.full_name))
+                        .map(|p| (p.full_name.clone(), p.family_name.clone()))
+                        .collect();
+                    if hits.is_empty() {
                         return Ok(Applied::Already("app not installed".into()));
                     }
-                    let n = ps_quote(name);
-                    let script = format!(
-                        "$ErrorActionPreference='SilentlyContinue';\
-                         Get-AppxPackage -AllUsers | Where-Object {{ $_.Name -like {n} -or $_.PackageFamilyName -like {n} }} | Remove-AppxPackage -AllUsers;\
-                         Get-AppxProvisionedPackage -Online | Where-Object {{ $_.DisplayName -like {n} }} | Remove-AppxProvisionedPackage -Online | Out-Null"
-                    );
-                    let r = self.powershell(&script, name, T_SHORT);
+                    // Every matched package: remove for all users, then
+                    // deprovision its family so it doesn't come back for a new
+                    // user — the WinRT PackageManager itself, zero PowerShell.
+                    let mut first_err = None;
+                    for (full, family) in &hits {
+                        if let Err(e) = crate::appx::remove_for_all_users(full) {
+                            if first_err.is_none() {
+                                first_err = Some(format!("{full}: {e}"));
+                            }
+                            continue;
+                        }
+                        let _ = crate::appx::deprovision(family);
+                    }
                     self.appx_cache = None; // re-read after a change
-                    r
+                    match first_err {
+                        Some(e) => Err(e),
+                        None => Ok(Applied::Done),
+                    }
                 }
                 "clear_cache" => Ok(Applied::NotApplicable("cache clear not needed".into())),
                 other => Err(format!("unsupported appx op '{other}'")),
@@ -542,22 +540,22 @@ impl Backend for WindowsBackend {
 
             Action::Powerplan { import, guid } => {
                 let full = self.asset(import)?;
-                let g = guid.clone().unwrap_or_default();
-                self.program(&sys_tool("powercfg"), &format!("-import \"{}\" {g}", full.display()), "powercfg", T_SHORT)?;
-                if !g.is_empty() {
-                    self.program(&sys_tool("powercfg"), &format!("-setactive {g}"), "powercfg", T_SHORT)?;
-                }
-                Ok(Applied::Done)
+                let path = full.to_string_lossy().to_string();
+                let activate = guid.as_deref().is_some_and(|g| !g.is_empty());
+                // powrprof.dll directly — the DLL powercfg.exe itself calls.
+                // The activated GUID is always the one Windows just assigned,
+                // never the schema's `guid` hint (which only says "activate").
+                win32::import_power_scheme(&path, activate).map(|_| Applied::Done)
             }
 
             Action::Device { op, name } => {
-                // Built-in PnpDevice module — no third-party tool needed.
-                let verb = if op == "disable" { "Disable-PnpDevice" } else { "Enable-PnpDevice" };
-                let script = format!(
-                    "Get-PnpDevice -FriendlyName {} -ErrorAction Stop | {verb} -Confirm:$false -ErrorAction Stop",
-                    ps_quote(name)
-                );
-                self.powershell(&script, name, T_SHORT)
+                // SetupAPI directly — the same DIF_PROPERTYCHANGE call Device
+                // Manager's own Disable/Enable makes. No PowerShell, no process.
+                match win32::set_device_enabled(name, op == "enable") {
+                    (0, _, _) => Ok(Applied::NotApplicable(format!("device '{name}' not present"))),
+                    (_, changed, _) if changed > 0 => Ok(Applied::Done),
+                    (_, _, err) => Err(err.unwrap_or_else(|| format!("{name}: could not change device state"))),
+                }
             }
 
             Action::Env { name, data, scope } => {

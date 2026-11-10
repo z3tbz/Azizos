@@ -1,11 +1,19 @@
 //! Build script: embeds everything Azizos needs into the one .exe.
 //!   * data/tweaks/*.json  -> TWEAKS  (the catalog the engine runs)
 //!   * data/preflight.json -> PREFLIGHT (which bundled file fixes a requirement)
-//!   * assets/**           -> ASSETS  (the playbook's own scripts/tools/installers)
+//!   * assets/**           -> ASSETS  (only the files a tweak or preflight fix
+//!                            actually opens — see `referenced_assets` below)
 //!   * azizos.manifest     -> requireAdministrator + Common-Controls v6 + DPI aware
 //! Nothing is read from disk at run time, so there is no .apbx-style package to
 //! pull apart — the app is the playbook.
+//!
+//! `assets/` on disk is allowed to hold more than the catalog uses (e.g. raw
+//! material kept around for a future tweak); only files a tweak JSON or
+//! preflight.json actually names get `include_bytes!`'d into the binary, so
+//! the exe never carries dead weight or unaccountable executables.
 
+use serde_json::Value;
+use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
@@ -26,6 +34,68 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
+/// `cmd /c <file> ...` -> the asset filename, mirroring the exact guard
+/// `exec_windows.rs::check_cmd_asset` uses at runtime (no path separator, no
+/// `%VAR%`): only a bare shipped file counts as an asset reference.
+fn cmd_target(args: &str) -> Option<String> {
+    let rest = args.trim_start();
+    let rest = rest.strip_prefix("/c").or_else(|| rest.strip_prefix("/C"))?;
+    let first = rest.trim_start().split_whitespace().next()?;
+    let first = first.trim_matches('"');
+    let lower = first.to_ascii_lowercase();
+    let is_file = (lower.ends_with(".exe") || lower.ends_with(".bat") || lower.ends_with(".cmd"))
+        && !first.contains('\\')
+        && !first.contains('%');
+    is_file.then(|| first.to_string())
+}
+
+/// Every asset filename a tweak action or a preflight fix actually opens.
+fn referenced_assets(tweak_docs: &[String], preflight_json: &str) -> BTreeSet<String> {
+    let mut refs = BTreeSet::new();
+    let mut scan = |v: &Value| {
+        let Some(actions) = v.get("actions").and_then(Value::as_array) else { return };
+        for a in actions {
+            match a.get("type").and_then(Value::as_str) {
+                Some("bundled") | Some("installer") => {
+                    if let Some(f) = a.get("file").and_then(Value::as_str) {
+                        refs.insert(f.to_string());
+                    }
+                }
+                Some("powerplan") => {
+                    if let Some(f) = a.get("import").and_then(Value::as_str) {
+                        refs.insert(f.to_string());
+                    }
+                }
+                Some("command") => {
+                    let exe = a.get("exe").and_then(Value::as_str).unwrap_or("");
+                    if exe.eq_ignore_ascii_case("cmd") || exe.eq_ignore_ascii_case("cmd.exe") {
+                        let args = a.get("args").and_then(Value::as_str).unwrap_or("");
+                        if let Some(f) = cmd_target(args) {
+                            refs.insert(f);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    };
+    for doc in tweak_docs {
+        if let Ok(v) = serde_json::from_str::<Value>(doc) {
+            scan(&v);
+        }
+    }
+    if let Ok(v) = serde_json::from_str::<Value>(preflight_json) {
+        if let Some(fixes) = v.get("fixes").and_then(Value::as_object) {
+            for fix in fixes.values() {
+                if let Some(f) = fix.get("file").and_then(Value::as_str) {
+                    refs.insert(f.to_string());
+                }
+            }
+        }
+    }
+    refs
+}
+
 fn main() {
     let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
     let root = manifest.parent().unwrap().to_path_buf();
@@ -43,6 +113,7 @@ fn main() {
     let mut tweaks = Vec::new();
     walk(&data.join("tweaks"), &mut tweaks);
     tweaks.retain(|p| p.extension().map(|e| e == "json").unwrap_or(false));
+    let tweak_docs: Vec<String> = tweaks.iter().map(|p| std::fs::read_to_string(p).unwrap_or_default()).collect();
     src.push_str("pub const TWEAKS: &[&str] = &[\n");
     for p in &tweaks {
         writeln!(src, "    include_str!(r#\"{}\"#),", p.display()).unwrap();
@@ -51,23 +122,45 @@ fn main() {
 
     // Pre-flight fixes (optional file)
     let pf = data.join("preflight.json");
+    let preflight_doc = std::fs::read_to_string(&pf).unwrap_or_else(|_| "{}".to_string());
     if pf.exists() {
         writeln!(src, "pub const PREFLIGHT: &str = include_str!(r#\"{}\"#);", pf.display()).unwrap();
     } else {
         src.push_str("pub const PREFLIGHT: &str = \"{}\";\n");
     }
 
-    // Assets
+    // Assets: only what a tweak or a preflight fix actually opens by name —
+    // `assets/` on disk may hold more (raw material for future tweaks), but
+    // that extra weight never rides along in the shipped exe.
+    let refs = referenced_assets(&tweak_docs, &preflight_doc);
     let mut files = Vec::new();
     walk(&assets, &mut files);
     if files.is_empty() {
         println!("cargo:warning=assets/ is empty — run scripts/sync-assets.ps1 before a release build");
     }
     src.push_str("pub const ASSETS: &[(&str, &[u8])] = &[\n");
+    let mut embedded: BTreeSet<String> = BTreeSet::new();
     for p in &files {
-        writeln!(src, "    (r#\"{}\"#, include_bytes!(r#\"{}\"#)),", rel(&assets, p), p.display()).unwrap();
+        let relp = rel(&assets, p);
+        if !refs.contains(&relp) {
+            continue;
+        }
+        writeln!(src, "    (r#\"{relp}\"#, include_bytes!(r#\"{}\"#)),", p.display()).unwrap();
+        embedded.insert(relp);
     }
     src.push_str("];\n");
+    let skipped = files.len() - embedded.len();
+    if skipped > 0 {
+        println!(
+            "cargo:warning=assets/: embedding {} referenced file(s), leaving out {skipped} unreferenced file(s) on disk (no tweak opens them — not shipped in the exe)",
+            embedded.len()
+        );
+    }
+    for want in refs.difference(&embedded) {
+        println!(
+            "cargo:warning=assets/{want} is referenced by a tweak or preflight fix but missing — that action/fix will report a clear 'missing asset' error at runtime instead of silently failing"
+        );
+    }
 
     std::fs::write(&out, src).unwrap();
 

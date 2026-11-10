@@ -4,16 +4,25 @@
 
 ## 1. الأدوات (مرة وحدة)
 
-1. **Rust** — ثبّت من <https://rustup.rs> (يختار MSVC toolchain تلقائياً).
-2. **Visual Studio Build Tools** (الـ linker) — ثبّت "Desktop development with C++" من
-   <https://visualstudio.microsoft.com/visual-cpp-build-tools/>.
-3. **Tauri CLI**: `cargo install tauri-cli --version "^2"` (ما يحتاج Node — الواجهة HTML/JS جاهزة).
-4. **WebView2** — موجود أصلاً على ويندوز 11؛ على 10 ثبّت Evergreen Runtime.
+1. **Rust** — ثبّت من <https://rustup.rs>.
+2. **Visual Studio** (Build Tools يكفي، أو Community كاملة) مع workload
+   "Desktop development with C++" — فيها الـ linker وWindows SDK اللي Rust يحتاجها
+   على MSVC. تحميل: <https://visualstudio.microsoft.com/visual-cpp-build-tools/>.
+3. تأكد إن توولتشين Rust النشط هو MSVC لا GNU (مهم — توولتشين GNU ما يقدر يربط
+   مكتبات Tauri/windows-sys أصلاً):
+   ```bash
+   rustup toolchain install stable-x86_64-pc-windows-msvc
+   rustup default stable-x86_64-pc-windows-msvc
+   rustup show   # تأكد إن "active toolchain" ينتهي بـ -msvc
+   ```
+4. **Tauri CLI**: `cargo install tauri-cli --version "^2"` (ما يحتاج Node — الواجهة HTML/JS جاهزة).
+5. **WebView2** — موجود أصلاً على ويندوز 11؛ على 10 ثبّت Evergreen Runtime.
 
 تأكد:
 ```bash
 rustc --version
 cargo --version
+cargo tauri --version
 ```
 
 ## 2. بناء المحرّك وتشغيل الاختبارات (قلب المشروع)
@@ -36,30 +45,36 @@ powershell -File scripts/convert-playbook.ps1 -PlaybookRoot <مجلد البلا
 powershell -File scripts/apply-names.ps1
 # 3) انسخ Executables إلى assets (تُدمج داخل الـ exe)
 powershell -File scripts/sync-assets.ps1 -PlaybookRoot <مجلد البلاي بوك>
+# 4) ثلاثة ملفات كان البلاي بوك الأصلي يحمّلها من النت وقت التثبيت — Azizos يدمجها
+#    بدل ما ينزّلها، فحملها مرة وحدة من مصادرها الرسمية (أو حدّث الروابط في
+#    data/assets-needed.json لو تبغى نسخة أحدث):
+powershell -File scripts/fetch-vendor-assets.ps1
 ```
 
-`sync-assets` يطبع الملفات الناقصة. البلاي بوك الأصلي كان **يحمّلها من النت** وقت التثبيت،
-وAzizos بدون نت، فلازم تحطها بنفسك في `assets/` بنفس الاسم:
-
-| الملف | يحتاجه | المصدر الأصلي |
+| الملف | يحتاجه | المصدر الرسمي |
 |---|---|---|
-| `vcpp.exe` | core-commands | VisualCppRedist_AIO_x86_x64.exe (abbodi1406) |
-| `OpenShell.exe` | openshell | OpenShellSetup_4_4_198.exe |
-| `7zip.exe` | 7zip | مثبّت 7-Zip x64 (يتثبت بـ `/S`) |
+| `vcpp.exe` | core-commands | VisualCppRedist_AIO_x86_x64.exe (abbodi1406/vcredist على GitHub) |
+| `OpenShell.exe` | openshell | Open-Shell-Menu v4.4.198 الرسمي على GitHub |
+| `7zip.exe` | 7zip | مثبّت 7-Zip x64 الرسمي من 7-zip.org |
 
-إذا نقص ملف: التويك ما يوقف التشغيل — ينكتب في التقرير "missing asset".
+**مهم:** `app/build.rs` يدمج في الـ exe **فقط الملفات اللي تويك فعلياً يفتحها بالاسم** —
+أي ملف ثاني تحطه في `assets/` (مواد خام لتويكات مستقبلية مثلاً) يبقى على القرص وما يدخل
+الـ exe أبداً، فالبرنامج النهائي ما يحمل وزن ميت ولا ملفات تنفيذية غير مستخدمة. لو ملف
+مطلوب ناقص، يطبع البناء تحذير واضح، وفي التشغيل التويك يسجّل "missing asset" بدل ما
+يفشل بصمت.
 
 ## 4. الاختبارات ثم البناء
 
 ```bash
 cargo test --workspace          # schema / catalog / exec / detect + الكتالوج المدمج
-cd app && cargo tauri build      # targeteleasezizos-app.exe + مثبّت NSIS
+cd app && cargo tauri build      # target\release\azizos-app.exe + مثبّت NSIS
 ```
 
-- الـ exe لحاله كافي (كل التويكات والأصول داخله؛ 60MB تقريباً). يحتاج WebView2 (موجود
+- الـ exe لحاله كافي (كل التويكات والأصول المستخدَمة فعلياً داخله؛ ~48MB أغلبها مثبّت
+  vcpp.exe نفسه). يحتاج WebView2 (موجود
   في ويندوز 11، وفي 10 مع التحديثات). تويك إزالة Edge ما يمس WebView2.
 - يطلب صلاحيات المسؤول تلقائياً (`app/azizos.manifest`). الأيقونة في `app/icons/icon.ico`.
-- التقرير ينحفظ في `سطح المكتبAzizos-Report-<الوقت>` (report.txt + report.json فيه القيم
+- التقرير ينحفظ في `سطح المكتب\Azizos-Report-<الوقت>` (report.txt + report.json فيه القيم
   السابقة للرجوع).
 - بعد الريستارت يفتح AZIZ Gaming Optimizer مرة وحدة (RunOnce).
 

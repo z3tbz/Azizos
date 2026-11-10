@@ -21,6 +21,8 @@ pub mod exec_windows;
 pub mod detect_windows;
 #[cfg(all(windows, feature = "native"))]
 pub mod win32;
+#[cfg(all(windows, feature = "native"))]
+pub mod appx;
 
 #[cfg(all(windows, feature = "native"))]
 pub use exec_windows::WindowsBackend;

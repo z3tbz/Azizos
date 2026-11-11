@@ -1,155 +1,239 @@
 {
-    "id":  "core-commands",
-    "name":  {
-                 "ar":  "أوامر النظام",
-                 "en":  "System commands"
-             },
-    "category":  "performance",
-    "profiles":  [
-
-                 ],
-    "default":  true,
-    "requires_reboot":  true,
-    "risk":  "low",
-    "actions":  [
-                    {
-                        "type":  "bcd",
-                        "args":  "/set {current} description \"Azizos\""
-                    },
-                    {
-                        "type":  "bcd",
-                        "args":  "/set bootmenupolicy Legacy"
-                    },
-                    {
-                        "type":  "bcd",
-                        "args":  "/set disabledynamictick yes"
-                    },
-                    {
-                        "type":  "bcd",
-                        "args":  "/set {current} recoveryenabled no"
-                    },
-                    {
-                        "type":  "bcd",
-                        "args":  "/set {current} disableelamdrivers yes"
-                    },
-                    {
-                        "type":  "bcd",
-                        "args":  "/set {current} integrityservices disable"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "AzizosPowerPlanApplier.exe",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "command",
-                        "exe":  "label",
-                        "args":  "%systemdrive% Azizos"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SYSTEM\\CurrentControlSet\\Control\\FileSystem",
-                        "name":  "NtfsDisableLastAccessUpdate",
-                        "kind":  "dword",
-                        "data":  2147483649
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SYSTEM\\CurrentControlSet\\Control\\FileSystem",
-                        "name":  "NtfsDisable8dot3NameCreation",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "env",
-                        "name":  "DOTNET_CLI_TELEMETRY_OPTOUT",
-                        "data":  "1",
-                        "scope":  "user"
-                    },
-                    {
-                        "type":  "env",
-                        "name":  "DOTNET_TRY_CLI_TELEMETRY_OPTOUT",
-                        "data":  "1",
-                        "scope":  "user"
-                    },
-                    {
-                        "type":  "env",
-                        "name":  "CLOUDSDK_CORE_DISABLE_PROMPTS",
-                        "data":  "1",
-                        "scope":  "user"
-                    },
-                    {
-                        "type":  "env",
-                        "name":  "DOCKER_CLI_TELEMETRY_OPTOUT",
-                        "data":  "1",
-                        "scope":  "user"
-                    },
-                    {
-                        "type":  "env",
-                        "name":  "npm_config_loglevel",
-                        "data":  "silent",
-                        "scope":  "user"
-                    },
-                    {
-                        "type":  "env",
-                        "name":  "VS_TELEMETRY_OPT_OUT",
-                        "data":  "1",
-                        "scope":  "user"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "disable-write-cache-buffering.bat",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "disable-netbios.bat",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "command",
-                        "exe":  "cmd",
-                        "args":  "/c xcopy \"Windows\" \"%windir%\" /E /I /Y"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "svchost.ps1",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "Bitlocker.ps1",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "DEVMANVIEW.CMD",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "command",
-                        "exe":  "cmd",
-                        "args":  "/c vcpp.exe /ai"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "Install-AzizOptimizer.ps1",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    }
-                ],
-    "description":  {
-                        "ar":  "إعدادات الإقلاع والطاقة ونظام الملفات عبر أدوات ويندوز نفسها.",
-                        "en":  "Boot, power and file-system settings applied with Windows\u0027 own tools."
-                    }
+    "id": "core-commands",
+    "name": {
+        "ar": "أوامر النظام",
+        "en": "System commands"
+    },
+    "category": "performance",
+    "profiles": [],
+    "default": true,
+    "requires_reboot": true,
+    "risk": "low",
+    "actions": [
+        {
+            "type": "bcd",
+            "args": "/set {current} description \"Azizos\""
+        },
+        {
+            "type": "bcd",
+            "args": "/set bootmenupolicy Legacy"
+        },
+        {
+            "type": "bcd",
+            "args": "/set disabledynamictick yes"
+        },
+        {
+            "type": "bcd",
+            "args": "/set {current} recoveryenabled no"
+        },
+        {
+            "type": "bcd",
+            "args": "/set {current} disableelamdrivers yes"
+        },
+        {
+            "type": "bcd",
+            "args": "/set {current} integrityservices disable"
+        },
+        {
+            "type": "bundled",
+            "file": "AzizosPowerPlanApplier.exe",
+            "args": "",
+            "runas": "user_elevated"
+        },
+        {
+            "type": "command",
+            "exe": "label",
+            "args": "%systemdrive% Azizos"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+            "name": "NtfsDisableLastAccessUpdate",
+            "kind": "dword",
+            "data": 2147483649
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+            "name": "NtfsDisable8dot3NameCreation",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "env",
+            "name": "DOTNET_CLI_TELEMETRY_OPTOUT",
+            "data": "1",
+            "scope": "user"
+        },
+        {
+            "type": "env",
+            "name": "DOTNET_TRY_CLI_TELEMETRY_OPTOUT",
+            "data": "1",
+            "scope": "user"
+        },
+        {
+            "type": "env",
+            "name": "CLOUDSDK_CORE_DISABLE_PROMPTS",
+            "data": "1",
+            "scope": "user"
+        },
+        {
+            "type": "env",
+            "name": "DOCKER_CLI_TELEMETRY_OPTOUT",
+            "data": "1",
+            "scope": "user"
+        },
+        {
+            "type": "env",
+            "name": "npm_config_loglevel",
+            "data": "silent",
+            "scope": "user"
+        },
+        {
+            "type": "env",
+            "name": "VS_TELEMETRY_OPT_OUT",
+            "data": "1",
+            "scope": "user"
+        },
+        {
+            "type": "bundled",
+            "file": "disable-write-cache-buffering.bat",
+            "args": "",
+            "runas": "user_elevated"
+        },
+        {
+            "type": "bundled",
+            "file": "disable-netbios.bat",
+            "args": "",
+            "runas": "user_elevated"
+        },
+        {
+            "type": "file",
+            "op": "copy",
+            "path": "Windows",
+            "to": "%windir%"
+        },
+        {
+            "type": "bundled",
+            "file": "svchost.ps1",
+            "args": "",
+            "runas": "user_elevated"
+        },
+        {
+            "type": "bundled",
+            "file": "Bitlocker.ps1",
+            "args": "",
+            "runas": "user_elevated"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "PCI Encryption/Decryption Controller"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "AMD PSP"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "Intel SMBus"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "Intel Management Engine"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "PCI Memory Controller"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "PCI standard RAM Controller"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "WAN Miniport (IKEv2)"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "WAN Miniport (IP)"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "WAN Miniport (IPv6)"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "WAN Miniport (L2TP)"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "WAN Miniport (Network Monitor)"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "WAN Miniport (PPPOE)"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "WAN Miniport (PPTP)"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "WAN Miniport (SSTP)"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "Programmable Interrupt Controller"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "Numeric Data Processor"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "Communications Port (COM1)"
+        },
+        {
+            "type": "device",
+            "op": "disable",
+            "name": "Microsoft GS Wavetable Synth"
+        },
+        {
+            "type": "installer",
+            "file": "vcpp.exe",
+            "args": "/ai"
+        },
+        {
+            "type": "bundled",
+            "file": "Install-AzizOptimizer.ps1",
+            "args": "",
+            "runas": "user_elevated"
+        }
+    ],
+    "description": {
+        "ar": "إعدادات الإقلاع والطاقة ونظام الملفات عبر أدوات ويندوز نفسها.",
+        "en": "Boot, power and file-system settings applied with Windows' own tools."
+    },
+    "order": 300
 }

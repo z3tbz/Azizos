@@ -20,7 +20,7 @@
 use crate::exec::{Applied, Backend};
 use crate::schema::{Action, Check, Hive, RegData, RegKind, ServiceStartup};
 use crate::win32;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -40,11 +40,38 @@ pub struct WindowsBackend {
     pub asset_dir: PathBuf,
     /// Installed + provisioned Appx package full names, read once per run.
     appx_cache: Option<Vec<crate::appx::PackageRef>>,
+    /// Probe mode: run every read-only pre-check but never write (see `probing`).
+    probe: bool,
+    journal: Option<std::fs::File>,
 }
 
 impl WindowsBackend {
     pub fn new(asset_dir: PathBuf) -> Self {
-        Self { asset_dir, appx_cache: None }
+        Self { asset_dir, appx_cache: None, probe: false, journal: None }
+    }
+
+    /// A backend that only answers "what would happen": `Already` /
+    /// `NotApplicable` exactly as a real run would, and `Done` for anything
+    /// that would change — without changing it. Used for the preview and to
+    /// test the whole catalog against a real machine safely.
+    pub fn probing(asset_dir: PathBuf) -> Self {
+        Self { asset_dir, appx_cache: None, probe: true, journal: None }
+    }
+
+    pub fn set_journal(&mut self, path: &Path) -> Result<(), String> {
+        self.journal = Some(std::fs::OpenOptions::new().write(true).create_new(true).open(path)
+            .map_err(|e| format!("journal {}: {e}", path.display()))?);
+        Ok(())
+    }
+
+    /// Expand %VARS%; a relative path means a file shipped with the app.
+    fn resolve(&self, path: &str) -> PathBuf {
+        let p = PathBuf::from(expand(path));
+        if p.is_absolute() || path.is_empty() {
+            p
+        } else {
+            self.asset_dir.join(p)
+        }
     }
 
     fn asset(&self, file: &str) -> Result<PathBuf, String> {
@@ -201,17 +228,19 @@ fn appx_match(pattern: &str, full: &str) -> bool {
     win32::glob(pattern, full) || win32::glob(pattern, name)
 }
 
-/// Scheduled task state read from its definition file (System32\Tasks\…):
-/// None = no such task, Some(true) = enabled, Some(false) = disabled.
-fn task_enabled(task: &str) -> Option<bool> {
-    let rel = task.trim_start_matches('\\');
-    let file = system_root().join(r"System32\Tasks").join(rel);
-    let bytes = std::fs::read(file).ok()?;
-    // Task XML is UTF-16LE with a BOM.
-    let units: Vec<u16> = bytes.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
-    let xml = String::from_utf16_lossy(&units);
-    let settings = xml.split("<Settings>").nth(1).and_then(|s| s.split("</Settings>").next()).unwrap_or("");
-    Some(!settings.contains("<Enabled>false</Enabled>"))
+/// Recursive copy (what `xcopy /E /I /H /Y` did), creating folders as needed.
+fn copy_tree(src: &Path, dst: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dst)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let to = dst.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_tree(&entry.path(), &to)?;
+        } else {
+            std::fs::copy(entry.path(), &to)?;
+        }
+    }
+    Ok(())
 }
 
 // ----------------------------------------------------------------- process --
@@ -240,7 +269,16 @@ fn sys_tool(exe: &str) -> PathBuf {
 }
 
 /// Spawn, wait with a timeout, and turn a non-zero exit into a readable error.
-fn wait(mut cmd: Command, what: &str, limit: Duration) -> Result<Applied, String> {
+fn wait(cmd: Command, what: &str, limit: Duration) -> Result<Applied, String> {
+    match wait_code(cmd, what, limit)? {
+        (0, _) => Ok(Applied::Done),
+        (code, tail) => Err(format!("{what}: exit code {code} (0x{:08X}) {tail}", code as u32)),
+    }
+}
+
+/// Run to completion and hand back the exit code with the last output line.
+/// `Err` only when the process could not start or ran past its time limit.
+fn wait_code(mut cmd: Command, what: &str, limit: Duration) -> Result<(i32, String), String> {
     let mut child = cmd.spawn().map_err(|e| format!("{what}: cannot start ({e})"))?;
     // Drain pipes on threads so a chatty child can never block on a full pipe.
     let mut so = child.stdout.take();
@@ -275,14 +313,10 @@ fn wait(mut cmd: Command, what: &str, limit: Duration) -> Result<Applied, String
     };
     let out = t_out.join().unwrap_or_default();
     let err = t_err.join().unwrap_or_default();
-    if status.success() {
-        return Ok(Applied::Done);
-    }
     let msg = if !err.is_empty() { err } else { out };
     let tail = String::from_utf8_lossy(&msg);
-    let tail = tail.trim().lines().last().unwrap_or("").trim();
-    let code = status.code().unwrap_or(-1);
-    Err(format!("{what}: exit code {code} (0x{:08X}) {tail}", code as u32))
+    let tail = tail.trim().lines().last().unwrap_or("").trim().to_string();
+    Ok((status.code().unwrap_or(-1), tail))
 }
 
 /// UTF-16LE + base64, the format `powershell -EncodedCommand` expects.
@@ -303,7 +337,7 @@ pub(crate) fn encode_ps(script: &str) -> String {
 impl WindowsBackend {
     fn powershell(&self, script: &str, what: &str, limit: Duration) -> Result<Applied, String> {
         let mut c = self.proc(&sys_tool("powershell"));
-        c.args(["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand"])
+        c.args(["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-OutputFormat", "Text", "-EncodedCommand"])
             .arg(encode_ps(script));
         wait(c, what, limit)
     }
@@ -333,7 +367,16 @@ impl WindowsBackend {
                 wait(c, file, limit)
             }
             // cmd's own quoting rule: /c ""<path>" <args>"
-            "bat" | "cmd" => self.program(&sys_tool("cmd"), &format!("/d /c \"\"{path}\" {args}\""), file, limit),
+            "bat" | "cmd" => {
+                // A batch file's exit code is just the ERRORLEVEL of whatever
+                // command happened to run last (`reg delete` of a value that is
+                // already gone ends the script with 1). It says nothing about
+                // the script as a whole — AME ignores it too — so only a script
+                // that cannot start or hangs past its limit is an error.
+                let mut c = self.proc(&sys_tool("cmd"));
+                c.raw_arg(format!("/d /c \"\"{path}\" {args}\""));
+                wait_code(c, file, limit).map(|_| Applied::Done)
+            }
             "msi" => self.program(&sys_tool("msiexec"), &format!("/i \"{path}\" {args}"), file, limit),
             _ => self.program(&full, args, file, limit),
         }
@@ -360,6 +403,16 @@ impl WindowsBackend {
 
 impl Backend for WindowsBackend {
     fn apply(&mut self, action: &Action) -> Result<Applied, String> {
+        // Every arm reads first (Already / NotApplicable), and only then writes.
+        // In probe mode it stops right before the write and answers `Done`
+        // ("this would change something") — nothing on the machine is touched.
+        macro_rules! would_change {
+            () => {
+                if self.probe {
+                    return Ok(Applied::Done);
+                }
+            };
+        }
         match action {
             Action::Registry { op, hive, path, name, kind, data } => {
                 let name = name.as_deref().unwrap_or("");
@@ -371,18 +424,23 @@ impl Backend for WindowsBackend {
                                 return Ok(Applied::Already("value already set".into()));
                             }
                         }
+                        would_change!();
                         let key = root(*hive).create(path).map_err(|e| format!("{path}: {e}"))?;
                         set_value(&key, name, kind, data)
                             .map(|_| Applied::Done)
                             .map_err(|e| format!("{path}\\{name}: {e}"))
                     }
                     "delete" => {
-                        let Ok(ro) = root(*hive).open(path) else {
-                            return Ok(Applied::Already("key already absent".into()));
+                        let ro = match root(*hive).open(path) {
+                            Ok(k) => k,
+                            Err(e) if e.code().0 == E_NOT_FOUND => return Ok(Applied::Already("key already absent".into())),
+                            Err(e) => return Err(format!("{path}: {e}")),
                         };
-                        if ro.get_type(name).is_err() {
-                            return Ok(Applied::Already("value already absent".into()));
+                        if let Err(e) = ro.get_type(name) {
+                            return if e.code().0 == E_NOT_FOUND { Ok(Applied::Already("value already absent".into())) }
+                            else { Err(format!("{path}\\{name}: {e}")) };
                         }
+                        would_change!();
                         let key = root(*hive).create(path).map_err(|e| format!("{path}: {e}"))?;
                         let r = key.remove_value(name);
                         if not_found(&r) {
@@ -391,9 +449,11 @@ impl Backend for WindowsBackend {
                         r.map(|_| Applied::Done).map_err(|e| format!("{path}\\{name}: {e}"))
                     }
                     "delete_key" => {
-                        if root(*hive).open(path).is_err() {
-                            return Ok(Applied::Already("key already absent".into()));
+                        if let Err(e) = root(*hive).open(path) {
+                            return if e.code().0 == E_NOT_FOUND { Ok(Applied::Already("key already absent".into())) }
+                            else { Err(format!("{path}: {e}")) };
                         }
+                        would_change!();
                         let r = root(*hive).remove_tree(path);
                         if not_found(&r) {
                             return Ok(Applied::Already("key already absent".into()));
@@ -404,47 +464,95 @@ impl Backend for WindowsBackend {
                 }
             }
 
-            Action::Service { name, startup, op } => match op.as_str() {
-                "change" => {
-                    let want = startup_val(startup.unwrap_or(ServiceStartup::Disabled));
-                    // Never create a key for a service this edition doesn't have.
-                    let Ok(ro) = root(Hive::Hklm).open(svc_path(name)) else {
-                        return Ok(Applied::NotApplicable(format!("service {name} not on this Windows")));
-                    };
-                    if ro.get_u32("Start").ok() == Some(want) {
-                        return Ok(Applied::Already("startup already set".into()));
+            Action::Service { name, startup, op } => {
+                if name.contains('*') {
+                    let services = root(Hive::Hklm).open(r"SYSTEM\CurrentControlSet\Services")
+                        .map_err(|e| format!("service enumeration: {e}"))?;
+                    let hits: Vec<_> = services.keys().map_err(|e| e.to_string())?
+                        .filter(|s| win32::glob(name, s)).collect();
+                    if hits.is_empty() { return Ok(if op == "delete" { Applied::Already("matching services already absent".into()) }
+                        else { Applied::NotApplicable("no matching services".into()) }); }
+                    if op == "change" { return Err("wildcard startup changes must be expanded into individual actions to preserve original values".into()); }
+                    let mut changed = false;
+                    let mut error = None;
+                    for hit in hits {
+                        match self.apply(&Action::Service { name: hit, startup: *startup, op: op.clone() }) {
+                            Ok(Applied::Done) => changed = true,
+                            Err(e) => { error.get_or_insert(e); },
+                            _ => {},
+                        }
                     }
-                    let key = root(Hive::Hklm).create(svc_path(name)).map_err(|e| format!("{name}: {e}"))?;
-                    key.set_u32("Start", want).map(|_| Applied::Done).map_err(|e| format!("{name}: {e}"))
+                    return match error { Some(e) => Err(e), None if changed => Ok(Applied::Done),
+                        None => Ok(Applied::Already("matching services already in requested state".into())) };
                 }
-                "stop" => Ok(match win32::service_stop(name)? {
-                    win32::SvcResult::Done => Applied::Done,
-                    win32::SvcResult::Already => Applied::Already("service not running".into()),
-                    win32::SvcResult::Missing => Applied::NotApplicable(format!("service {name} not on this Windows")),
-                }),
-                "delete" => Ok(match win32::service_delete(name)? {
-                    win32::SvcResult::Done => Applied::Done,
-                    _ => Applied::Already("service already removed".into()),
-                }),
-                other => Err(format!("unsupported service op '{other}'")),
-            },
-
-            Action::ScheduledTask { path, op } => {
-                let state = task_enabled(path);
-                let a = match (op.as_str(), state) {
-                    ("delete", None) => return Ok(Applied::Already("task already absent".into())),
-                    (_, None) => return Ok(Applied::NotApplicable("task not on this Windows".into())),
-                    ("disable", Some(false)) => return Ok(Applied::Already("task already disabled".into())),
-                    ("enable", Some(true)) => return Ok(Applied::Already("task already enabled".into())),
-                    ("disable", _) => format!("/Change /TN \"{path}\" /Disable"),
-                    ("enable", _) => format!("/Change /TN \"{path}\" /Enable"),
-                    ("delete", _) => format!("/Delete /TN \"{path}\" /F"),
-                    (other, _) => return Err(format!("unsupported task op '{other}'")),
+                // Never create a key for a service this edition doesn't have.
+                let ro = match root(Hive::Hklm).open(svc_path(name)) {
+                    Ok(k) => k,
+                    Err(e) if e.code().0 != E_NOT_FOUND => return Err(format!("{name}: {e}")),
+                    Err(_) => {
+                    return Ok(if op == "delete" {
+                        Applied::Already("service already removed".into())
+                    } else {
+                        Applied::NotApplicable(format!("service {name} not on this Windows"))
+                    });
+                    }
                 };
-                self.program(&sys_tool("schtasks"), &a, path, T_SHORT)
+                match op.as_str() {
+                    "change" => {
+                        let want = startup_val(startup.unwrap_or(ServiceStartup::Disabled));
+                        if ro.get_u32("Start").ok() == Some(want) {
+                            return Ok(Applied::Already("startup already set".into()));
+                        }
+                        would_change!();
+                        let key = root(Hive::Hklm).create(svc_path(name)).map_err(|e| format!("{name}: {e}"))?;
+                        key.set_u32("Start", want).map(|_| Applied::Done).map_err(|e| format!("{name}: {e}"))
+                    }
+                    "stop" => {
+                        would_change!();
+                        Ok(match win32::service_stop(name)? {
+                            win32::SvcResult::Done => Applied::Done,
+                            win32::SvcResult::Already => Applied::Already("service not running".into()),
+                            win32::SvcResult::Missing => {
+                                Applied::NotApplicable(format!("service {name} not on this Windows"))
+                            }
+                        })
+                    }
+                    "delete" => {
+                        would_change!();
+                        Ok(match win32::service_delete(name)? {
+                            win32::SvcResult::Done => Applied::Done,
+                            _ => Applied::Already("service already removed".into()),
+                        })
+                    }
+                    other => Err(format!("unsupported service op '{other}'")),
+                }
             }
 
-            Action::Appx { name, scope: _, op } => match op.as_str() {
+            Action::ScheduledTask { path, op } => {
+                // Task Scheduler COM (ITaskService) — no schtasks.exe.
+                let state = crate::com::task_enabled(path)?;
+                match (op.as_str(), state) {
+                    ("delete", None) => Ok(Applied::Already("task already absent".into())),
+                    ("disable" | "enable", None) => Ok(Applied::NotApplicable("task not on this Windows".into())),
+                    ("disable", Some(false)) => Ok(Applied::Already("task already disabled".into())),
+                    ("enable", Some(true)) => Ok(Applied::Already("task already enabled".into())),
+                    ("disable", _) => {
+                        would_change!();
+                        crate::com::task_set_enabled(path, false).map(|_| Applied::Done)
+                    }
+                    ("enable", _) => {
+                        would_change!();
+                        crate::com::task_set_enabled(path, true).map(|_| Applied::Done)
+                    }
+                    ("delete", _) => {
+                        would_change!();
+                        crate::com::task_delete(path).map(|_| Applied::Done)
+                    }
+                    (other, _) => Err(format!("unsupported task op '{other}'")),
+                }
+            }
+
+            Action::Appx { name, scope, op } => match op.as_str() {
                 "remove" | "unregister" => {
                     let known = match &self.appx_cache {
                         Some(k) => k,
@@ -461,6 +569,11 @@ impl Backend for WindowsBackend {
                     if hits.is_empty() {
                         return Ok(Applied::Already("app not installed".into()));
                     }
+                    // AME unregister promises to retain program files; ordinary
+                    // RemovePackage cannot make that guarantee for the last user.
+                    if op == "unregister" { return Err("Appx unregister while retaining program files requires the author's original tool; refusing to substitute full removal".into()); }
+                    if scope != "family" { return Err(format!("Appx scope '{scope}' needs the author's original tool; refusing to substitute family removal")); }
+                    would_change!();
                     // Every matched package: remove for all users, then
                     // deprovision its family so it doesn't come back for a new
                     // user — the WinRT PackageManager itself, zero PowerShell.
@@ -472,7 +585,9 @@ impl Backend for WindowsBackend {
                             }
                             continue;
                         }
-                        let _ = crate::appx::deprovision(family);
+                        if let Err(e) = crate::appx::deprovision(family) {
+                            if first_err.is_none() { first_err = Some(format!("deprovision {family}: {e}")); }
+                        }
                     }
                     self.appx_cache = None; // re-read after a change
                     match first_err {
@@ -480,66 +595,134 @@ impl Backend for WindowsBackend {
                         None => Ok(Applied::Done),
                     }
                 }
-                "clear_cache" => Ok(Applied::NotApplicable("cache clear not needed".into())),
+                "clear_cache" => {
+                    let profiles_key = root(Hive::Hklm).open(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList")
+                        .map_err(|e| format!("ProfileList: {e}"))?;
+                    let mut profiles = Vec::new();
+                    for sid in profiles_key.keys().map_err(|e| e.to_string())? {
+                        let k = profiles_key.open(sid).map_err(|e| e.to_string())?;
+                        if let Ok(p) = k.get_string("ProfileImagePath") { profiles.push(PathBuf::from(expand(&p))); }
+                    }
+                    let roots = vec![system_root().join("SystemApps"),
+                        PathBuf::from(std::env::var("ProgramFiles").map_err(|e| e.to_string())?).join("WindowsApps")];
+                    crate::cache::clear(name, &profiles, &roots, self.probe)
+                }
                 other => Err(format!("unsupported appx op '{other}'")),
             },
 
             Action::File { op, path, to } => {
-                let p = PathBuf::from(expand(path));
+                // A relative path is a file/folder shipped with the app.
+                let shipped = !Path::new(&expand(path)).is_absolute();
+                let p = self.resolve(path);
                 match op.as_str() {
                     "delete" => {
-                        let r = if p.is_dir() {
-                            std::fs::remove_dir_all(&p)
-                        } else if p.exists() {
-                            std::fs::remove_file(&p)
-                        } else {
+                        if !p.try_exists().map_err(|e| format!("{}: {e}", p.display()))? {
                             return Ok(Applied::Already("already absent".into()));
-                        };
+                        }
+                        would_change!();
+                        let r = if p.is_dir() { std::fs::remove_dir_all(&p) } else { std::fs::remove_file(&p) };
                         r.map(|_| Applied::Done).map_err(|e| format!("{}: {e}", p.display()))
                     }
                     "rename" | "copy" => {
-                        let dst = PathBuf::from(expand(to.as_deref().unwrap_or("")));
+                        let dst = self.resolve(to.as_deref().unwrap_or(""));
                         if !p.exists() {
-                            return Ok(if op == "rename" && dst.exists() {
-                                Applied::Already("already renamed".into())
+                            return if shipped {
+                                Err(format!("missing asset '{path}' (ship it in assets/)"))
+                            } else if op == "rename" && dst.exists() {
+                                Ok(Applied::Already("already renamed".into()))
                             } else {
-                                Applied::NotApplicable("file not on this Windows".into())
-                            });
+                                Ok(Applied::NotApplicable("file not on this Windows".into()))
+                            };
                         }
-                        let r = if op == "rename" { std::fs::rename(&p, &dst) } else { std::fs::copy(&p, &dst).map(|_| ()) };
+                        would_change!();
+                        let r = if op == "rename" {
+                            std::fs::rename(&p, &dst)
+                        } else if p.is_dir() {
+                            copy_tree(&p, &dst)
+                        } else {
+                            dst.parent().map(std::fs::create_dir_all).transpose().and_then(|_| std::fs::copy(&p, &dst).map(|_| ()))
+                        };
                         r.map(|_| Applied::Done).map_err(|e| format!("{}: {e}", p.display()))
                     }
                     other => Err(format!("unsupported file op '{other}'")),
                 }
             }
 
-            Action::Kill { name } => match win32::kill_processes(name) {
+            Action::Kill { name, path_contains } => match win32::kill_processes_filtered(name, path_contains.as_deref(), self.probe) {
+                (_, _, Some(e)) => Err(e),
                 (0, _, _) => Ok(Applied::NotApplicable("not running".into())),
+                (_, _, _) if self.probe => Ok(Applied::Done),
                 (_, killed, _) if killed > 0 => Ok(Applied::Done),
                 (_, _, err) => Err(err.unwrap_or_else(|| format!("{name}: could not terminate"))),
             },
 
             Action::Command { exe, args } => {
-                let tool = sys_tool(exe);
+                // `label <drive> <name>` -> SetVolumeLabelW, in-process.
+                if exe.eq_ignore_ascii_case("label") || exe.eq_ignore_ascii_case("label.exe") {
+                    let line = expand(args);
+                    let mut parts = line.trim().splitn(2, char::is_whitespace);
+                    let drive = parts.next().unwrap_or("").trim_end_matches('\\').to_string();
+                    let label = parts.next().unwrap_or("").trim();
+                    let root_path = format!("{drive}\\");
+                    if win32::volume_label(&root_path).as_deref() == Some(label) {
+                        return Ok(Applied::Already("volume label already set".into()));
+                    }
+                    would_change!();
+                    return win32::set_volume_label(&root_path, label).map(|_| Applied::Done);
+                }
+                let tool = sys_tool(&expand(exe));
                 let is_cmd = tool.file_stem().map(|s| s.eq_ignore_ascii_case("cmd")).unwrap_or(false);
                 if is_cmd {
                     self.check_cmd_asset(args)?;
+                } else if tool.is_absolute() && !tool.exists() {
+                    return Ok(Applied::NotApplicable(format!("{} not on this Windows", tool.display())));
                 }
+                would_change!();
                 // cmd expands %VARS% itself (and owns `%a` loop vars); other tools don't.
                 let args = if is_cmd { args.clone() } else { expand(args) };
                 self.program(&tool, &args, exe, T_SCRIPT)
             }
 
-            Action::Bcd { args } => self.program(&sys_tool("bcdedit"), args, "bcdedit", T_SHORT),
+            Action::Bcd { args } => {
+                would_change!();
+                self.program(&sys_tool("bcdedit"), args, "bcdedit", T_SHORT)
+            }
 
-            Action::Powershell { script, runas: _ } => self.powershell(script, "powershell", T_SCRIPT),
+            Action::Powershell { script, runas } => {
+                if runas != "user_elevated" { return Err(format!("requested runas '{runas}' is unsupported; refusing to use a different identity")); }
+                would_change!();
+                self.powershell(script, "powershell", T_SCRIPT)
+            }
 
-            Action::Bundled { file, args, runas: _ } => self.run_asset(file, args, T_SCRIPT),
+            Action::Bundled { file, args, runas } => {
+                if runas != "user_elevated" { return Err(format!("requested runas '{runas}' is unsupported; refusing to use a different identity")); }
+                self.asset(file)?;
+                would_change!();
+                self.run_asset(file, args, T_SCRIPT)
+            }
 
-            Action::Installer { file, args } => self.run_asset(file, args, T_INSTALL),
+            Action::Installer { file, args } => {
+                let full = self.asset(file)?;
+                would_change!();
+                if full.extension().is_some_and(|e| e.eq_ignore_ascii_case("exe")) {
+                    // Windows Installer conventions: 3010 / 1641 = installed,
+                    // restart needed; 1638 = this product is already installed.
+                    let mut c = self.proc(&full);
+                    if !args.trim().is_empty() {
+                        c.raw_arg(args);
+                    }
+                    return match wait_code(c, file, T_INSTALL)? {
+                        (0 | 3010 | 1641, _) => Ok(Applied::Done),
+                        (1638, _) => Ok(Applied::Already("already installed".into())),
+                        (code, tail) => Err(format!("{file}: exit code {code} (0x{:08X}) {tail}", code as u32)),
+                    };
+                }
+                self.run_asset(file, args, T_INSTALL)
+            }
 
             Action::Powerplan { import, guid } => {
                 let full = self.asset(import)?;
+                would_change!();
                 let path = full.to_string_lossy().to_string();
                 let activate = guid.as_deref().is_some_and(|g| !g.is_empty());
                 // powrprof.dll directly — the DLL powercfg.exe itself calls.
@@ -548,14 +731,32 @@ impl Backend for WindowsBackend {
                 win32::import_power_scheme(&path, activate).map(|_| Applied::Done)
             }
 
+            Action::PowerProfile { desktop_import } => {
+                use crate::detect::Detector;
+                let laptop = crate::WindowsDetector.profile()?.device == crate::schema::Device::Laptop;
+                if laptop {
+                    would_change!();
+                    win32::apply_laptop_power_profile().map(|_| Applied::Done)
+                } else {
+                    let full = self.asset(desktop_import)?;
+                    would_change!();
+                    win32::import_power_scheme(&full.to_string_lossy(), true).map(|_| Applied::Done)
+                }
+            }
+
             Action::Device { op, name } => {
+                if op != "enable" && op != "disable" { return Err(format!("unsupported device op '{op}'")); }
                 // SetupAPI directly — the same DIF_PROPERTYCHANGE call Device
                 // Manager's own Disable/Enable makes. No PowerShell, no process.
-                match win32::set_device_enabled(name, op == "enable") {
-                    (0, _, _) => Ok(Applied::NotApplicable(format!("device '{name}' not present"))),
-                    (_, changed, _) if changed > 0 => Ok(Applied::Done),
-                    (_, _, err) => Err(err.unwrap_or_else(|| format!("{name}: could not change device state"))),
+                let o = win32::set_device_enabled(name, op == "enable", self.probe);
+                if let Some(e) = o.error {
+                    return Err(e);
                 }
+                Ok(match (o.pending, o.already) {
+                    (0, 0) => Applied::NotApplicable(format!("device '{name}' not present")),
+                    (0, _) => Applied::Already(format!("device already {op}d")),
+                    _ => Applied::Done,
+                })
             }
 
             Action::Env { name, data, scope } => {
@@ -567,11 +768,14 @@ impl Backend for WindowsBackend {
                 if root(hive).open(path).and_then(|k| k.get_string(name)).ok().as_deref() == Some(data.as_str()) {
                     return Ok(Applied::Already("variable already set".into()));
                 }
+                would_change!();
                 root(hive)
                     .create(path)
                     .and_then(|k| k.set_string(name, data))
-                    .map(|_| Applied::Done)
-                    .map_err(|e| format!("env {name}: {e}"))
+                    .map_err(|e| format!("env {name}: {e}"))?;
+                // Tell running programs (Explorer, new consoles) — what setx does.
+                win32::broadcast_environment_change();
+                Ok(Applied::Done)
             }
         }
     }
@@ -661,6 +865,56 @@ impl Backend for WindowsBackend {
             _ => None,
         }
     }
+
+    fn try_snapshot(&mut self, action: &Action) -> Result<Option<Action>, String> {
+        // Fail closed on read errors: access denied must never become "absent".
+        let target = match action {
+            Action::Registry { hive, path, name, op, .. } if op == "set" || op == "delete" =>
+                Some((*hive, path.as_str(), name.as_deref().unwrap_or(""))),
+            Action::Service { name, op, .. } if op == "change" => {
+                let path = svc_path(name);
+                match root(Hive::Hklm).open(&path) {
+                    Ok(k) => { k.get_u32("Start").map_err(|e| format!("{name}: {e}"))?; }
+                    Err(e) if e.code().0 == E_NOT_FOUND => return Ok(None),
+                    Err(e) => return Err(format!("{name}: {e}")),
+                }
+                None
+            }
+            Action::Env { name, scope, .. } => Some((
+                if scope == "machine" { Hive::Hklm } else { Hive::Hkcu },
+                if scope == "machine" { r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment" } else { "Environment" },
+                name.as_str())),
+            Action::ScheduledTask { path, op } if op == "enable" || op == "disable" => {
+                return Ok(crate::com::task_enabled(path)?.map(|on| Action::ScheduledTask {
+                    path: path.clone(), op: if on { "enable" } else { "disable" }.into()
+                }));
+            }
+            _ => None,
+        };
+        if let Some((hive, path, name)) = target {
+            match root(hive).open(path) {
+                Ok(k) => match k.get_type(name) {
+                    Ok(_) if read_value(&k, name).is_none() => return Err(format!("{path}\\{name}: cannot preserve value type/data")),
+                    Err(e) if e.code().0 != E_NOT_FOUND => return Err(format!("{path}\\{name}: {e}")),
+                    _ => {},
+                },
+                Err(e) if e.code().0 != E_NOT_FOUND => return Err(format!("{path}: {e}")),
+                _ => {},
+            }
+        }
+        Ok(self.snapshot(action))
+    }
+
+    fn persist_snapshot(&mut self, action: &Action, inverse: Option<&Action>) -> Result<(), String> {
+        if self.probe { return Ok(()); }
+        if let Some(file) = &mut self.journal {
+            let record = serde_json::json!({"action": action, "inverse": inverse,
+                "automatic_restore": inverse.is_some(), "stage": "before_apply"});
+            serde_json::to_writer(&mut *file, &record).map_err(|e| e.to_string())?;
+            file.write_all(b"\n").and_then(|_| file.sync_all()).map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    }
 }
 
 /// Expand %VAR% using the process environment and tidy doubled backslashes
@@ -707,6 +961,27 @@ pub(crate) fn expand(p: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn probe_never_writes_and_journal_is_durable_before_apply() {
+        let key = format!(r"Software\AzizosJournalTest{}", std::process::id());
+        let action = Action::Registry { op: "set".into(), hive: Hive::Hkcu, path: key.clone(),
+            name: Some("V".into()), kind: Some(RegKind::Dword), data: Some(RegData::Int(17)) };
+        let mut probe = WindowsBackend::probing(std::env::temp_dir());
+        assert_eq!(probe.apply(&action).unwrap(), Applied::Done);
+        assert!(windows_registry::CURRENT_USER.open(&key).is_err());
+        let journal = std::env::temp_dir().join(format!("AzizosJournalTest-{}.jsonl", std::process::id()));
+        let _ = std::fs::remove_file(&journal);
+        let mut backend = WindowsBackend::new(std::env::temp_dir());
+        backend.set_journal(&journal).unwrap();
+        let inverse = backend.try_snapshot(&action).unwrap();
+        backend.persist_snapshot(&action, inverse.as_ref()).unwrap();
+        let saved: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&journal).unwrap()).unwrap();
+        assert_eq!(saved["inverse"]["op"], "delete");
+        assert!(windows_registry::CURRENT_USER.open(&key).is_err());
+        drop(backend);
+        std::fs::remove_file(journal).unwrap();
+    }
 
     #[test]
     fn encodes_powershell_like_dotnet() {
@@ -784,7 +1059,7 @@ mod tests {
         let mut be = WindowsBackend::new(std::env::temp_dir());
         let svc = Action::Service { name: "Azizos_No_Such_Svc".into(), startup: Some(ServiceStartup::Disabled), op: "change".into() };
         assert!(matches!(be.apply(&svc).unwrap(), Applied::NotApplicable(_)));
-        let kill = Action::Kill { name: "azizos_no_such_process*".into() };
+        let kill = Action::Kill { name: "azizos_no_such_process*".into(), path_contains: None };
         assert!(matches!(be.apply(&kill).unwrap(), Applied::NotApplicable(_)));
         let file = Action::File { op: "delete".into(), path: r"%TEMP%\azizos_no_such_file.tmp".into(), to: None };
         assert!(matches!(be.apply(&file).unwrap(), Applied::Already(_)));

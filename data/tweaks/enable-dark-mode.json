@@ -1,47 +1,46 @@
 {
-    "id":  "enable-dark-mode",
-    "name":  {
-                 "ar":  "الوضع الداكن",
-                 "en":  "Dark Mode"
-             },
-    "category":  "appearance",
-    "profiles":  [
-
-                 ],
-    "default":  false,
-    "requires_reboot":  false,
-    "risk":  "low",
-    "actions":  [
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-                        "name":  "AppsUseLightTheme",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-                        "name":  "SystemUsesLightTheme",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Azizos",
-                        "name":  "DarkMode",
-                        "kind":  "dword",
-                        "data":  1
-                    }
-                ],
-    "description":  {
-                        "ar":  "ثيم داكن لويندوز والتطبيقات.",
-                        "en":  "Dark theme for Windows and apps."
-                    }
+    "id": "enable-dark-mode",
+    "name": {
+        "ar": "الوضع الداكن",
+        "en": "Dark Mode"
+    },
+    "category": "appearance",
+    "profiles": [],
+    "default": false,
+    "requires_reboot": false,
+    "risk": "low",
+    "actions": [
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+            "name": "AppsUseLightTheme",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+            "name": "SystemUsesLightTheme",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Azizos",
+            "name": "DarkMode",
+            "kind": "dword",
+            "data": 1
+        }
+    ],
+    "description": {
+        "ar": "ثيم داكن لويندوز والتطبيقات.",
+        "en": "Dark theme for Windows and apps."
+    },
+    "order": 250
 }

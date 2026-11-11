@@ -1,340 +1,254 @@
-// Azizos UI. Inside the built app it talks to the Rust engine through Tauri
-// (`window.__TAURI__`); opened in a plain browser it runs on mock data so the
-// design can be previewed (scripts/serve-ui.ps1).
+// UI only: Tauri commands and engine action definitions remain unchanged.
 (() => {
   "use strict";
   const TAURI = !!(window.__TAURI__ && window.__TAURI__.core);
-  const invoke = (cmd, args) => window.__TAURI__.core.invoke(cmd, args);
-  const listen = (ev, cb) => window.__TAURI__.event.listen(ev, cb);
-  const $ = id => document.getElementById(id);
-
-  let lang = (navigator.language || "en").toLowerCase().startsWith("ar") ? "ar" : "en";
-  const T = () => window.I18N[lang];
-  const CAT = window.CATALOG;
-  const selected = new Set(CAT.tweaks.filter(t => t.default).map(t => t.id));
-
-  // Text that comes from the system (errors, AV names, paths) is never HTML.
-  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
-    c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
-  const nameOf = t => (t && t.name && t.name[lang]) || (t && t.id) || "";
-  const btn = (cls, label, onclick) => {
-    const b = document.createElement("button");
-    b.type = "button"; b.className = cls; b.textContent = label; b.onclick = onclick;
-    return b;
+  const invoke = async (command, args) => {
+    try { return await window.__TAURI__.core.invoke(command, args); }
+    catch (value) {
+      window.AZ_DIAG.show(value);
+      const error = new Error(window.AZ_DIAG.format(value));
+      error.diagnostic = value?.code ? value : null;
+      throw error;
+    }
   };
-
-  // ---------- pages (category order = AME-style paging) ----------
-  const ORDER = ["base", "performance", "services", "debloat", "privacy", "appearance", "devices", "updates", "security"];
-  const catOf = t => t.id.startsWith("core-") ? "base" : t.category;
-  const PAGES = ORDER.filter(c => CAT.tweaks.some(t => catOf(t) === c));
-  const catLabel = c => c === "base" ? T().cat_base : ((CAT.categories[c] || {})[lang] || c);
-  let page = 0;
-
+  const $ = id => document.getElementById(id);
+  const CAT = window.CATALOG;
   const STEPS = ["welcome", "preflight", "tweaks", "review", "apply", "done"];
-  let current = "welcome";
-  let reqStatuses = [];
-  let sys = null;
-  let lastReport = null;
+  const ORDER = ["base", "performance", "services", "debloat", "privacy", "appearance", "devices", "updates", "security"];
+  const categoryOf = t => t.id.startsWith("core-") ? "base" : t.category;
+  const categories = ORDER.filter(c => CAT.tweaks.some(t => categoryOf(t) === c));
+  const selected = new Set(CAT.tweaks.filter(t => t.default).map(t => t.id));
+  const stored = key => { try { return localStorage.getItem(key); } catch (_) { return null; } };
+  const save = (key, value) => { try { localStorage.setItem(key, value); } catch (_) {} };
+  let lang = stored("azizos-language") === "en" ? "en" : "ar";
+  let theme = stored("azizos-theme") === "dark" ? "dark" : "light";
+  let current = "welcome", reqStatuses = [], requirementsError = null, sys = null, lastReport = null, running = false;
+  const T = () => window.I18N[lang];
+  const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const nameOf = t => t?.name?.[lang] || t?.id || "";
+  const categoryName = c => c === "base" ? T().cat_base : CAT.categories[c]?.[lang] || c;
+  const selectedTweaks = () => CAT.tweaks.filter(t => selected.has(t.id));
+  document.body.classList.toggle("native-app", TAURI);
+  $("demoBadge").hidden = TAURI;
+  $("nativeControls").hidden = !TAURI;
+  if (TAURI) {
+    const control = action => invoke("window_control", {action}).catch(e => window.AZ_DIAG.show(e));
+    $("windowMinimize").onclick = () => control("minimize");
+    $("windowMaximize").onclick = () => control("maximize");
+    $("windowClose").onclick = () => control("close");
+    $("stepCaption").onmousedown = event => { if (event.button === 0 && event.detail === 1) control("drag"); };
+    $("stepCaption").ondblclick = () => control("maximize");
+  }
 
-  // ---------- language / theme ----------
-  function applyLang() {
-    const html = document.documentElement;
-    html.lang = lang; html.dir = lang === "ar" ? "rtl" : "ltr";
-    $("langBtn").textContent = lang === "ar" ? "EN" : "ع";
-    document.querySelectorAll("[data-i18n]").forEach(el => {
-      const v = T()[el.getAttribute("data-i18n")];
-      if (typeof v === "string") el.textContent = v;
-    });
-    renderRail(); renderSys(); renderPreflight(); renderOptions(); renderSel();
+  function applyTheme() {
+    document.documentElement.dataset.theme = theme;
+    if (TAURI) invoke("set_window_theme", {theme}).catch(e => window.AZ_DIAG.show(e));
+    $("themeBtn").textContent = theme === "light" ? T().theme_dark : T().theme_light;
+    $("themeBtn").setAttribute("aria-pressed", String(theme === "dark"));
+  }
+  function renderRail() {
+    const index = STEPS.indexOf(current);
+    $("rail").innerHTML = STEPS.map((step, i) => `<li class="${i < index ? "done" : i === index ? "now" : ""}" ${i === index ? 'aria-current="step"' : ""}><i aria-hidden="true">${i < index ? "✓" : i + 1}</i><span>${esc(T().steps[i])}</span></li>`).join("");
+    $("stepCaption").textContent = `${T().step} ${index + 1} ${T().of} ${STEPS.length}`;
+  }
+  function applyLanguage() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    $("langBtn").textContent = lang === "ar" ? "EN" : "عربي";
+    $("langBtn").setAttribute("aria-label", lang === "ar" ? "English" : "العربية");
+    document.querySelectorAll("[data-i18n]").forEach(el => { const value = T()[el.dataset.i18n]; if (typeof value === "string") el.textContent = value; });
+    document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = T()[el.dataset.i18nTitle]; el.setAttribute("aria-label",el.title); });
+    applyTheme(); renderRail(); renderSystem(); renderRequirements(); renderCategorySelect(); renderOptions();
     if (current === "review") renderReview();
     if (current === "done") renderDone();
   }
-  $("langBtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; applyLang(); };
-  $("themeBtn").onclick = () => {
-    const r = document.documentElement;
-    r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark";
-  };
-
-  // ---------- step rail ----------
-  function renderRail() {
-    const ol = $("rail"); ol.innerHTML = "";
-    const ci = STEPS.indexOf(current);
-    STEPS.forEach((s, i) => {
-      const li = document.createElement("li");
-      li.className = i < ci ? "done" : (i === ci ? "now" : "");
-      li.innerHTML = `<i>${i < ci ? "✓" : String(i + 1).padStart(2, "0")}</i><span>${T().steps[i]}</span>`;
-      ol.appendChild(li);
-    });
-  }
+  $("langBtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; save("azizos-language", lang); applyLanguage(); };
+  $("themeBtn").onclick = () => { theme = theme === "light" ? "dark" : "light"; save("azizos-theme", theme); applyTheme(); };
   function go(screen) {
+    if (running || !STEPS.includes(screen)) return;
+    if (screen === "tweaks" && (requirementsError || reqStatuses.length !== 4 || reqStatuses.some(s => s.met === "Fail"))) return;
+    if ((screen === "review" || screen === "apply") && !selected.size) return;
     current = screen;
-    document.querySelectorAll(".screen").forEach(s => s.hidden = s.dataset.screen !== screen);
-    $("pbSel").hidden = !(screen === "tweaks" || screen === "review");
+    document.body.dataset.stage = screen;
+    document.querySelectorAll(".screen").forEach(el => el.hidden = el.dataset.screen !== screen);
     renderRail();
     if (screen === "tweaks") renderOptions();
     if (screen === "review") renderReview();
-    if (screen === "apply") runApply();
     if (screen === "done") renderDone();
+    $("app").focus({preventScroll:true});
+    if (screen === "apply") runApply();
   }
-  document.querySelectorAll("[data-next]").forEach(b => b.onclick = () => go(b.getAttribute("data-next")));
+  document.querySelectorAll("[data-next]").forEach(button => button.onclick = () => go(button.dataset.next));
 
-  // ---------- playbook panel: this PC ----------
-  async function loadSys() {
-    if (TAURI) { try { sys = await invoke("detect_system"); } catch (e) { sys = null; } }
-    else sys = { build: 26100, edition: "pro", device: "desktop", gpu: "nvidia", disk: "ssd" };
+  async function loadSystem() {
+    if (TAURI) { try { sys = await invoke("detect_system"); } catch (e) { sys = null; window.AZ_DIAG.show(e); } }
+    else sys = {build:26100,edition:"pro",device:"desktop",gpu:"nvidia",disk:"ssd"};
   }
-  function renderSys() {
-    $("pbTweaks").textContent = CAT.tweaks.length;
-    const box = $("sysInfo");
-    if (!sys) { box.innerHTML = `<div class="kv"><span>—</span></div>`; return; }
-    const up = s => (s && s !== "any") ? String(s).toUpperCase() : T().any;
-    const dev = sys.device === "laptop" ? T().dev_laptop : (sys.device === "desktop" ? T().dev_desktop : T().any);
-    box.innerHTML = [
-      [T().sys_build, `${esc(sys.build)} · ${esc(String(sys.edition).toUpperCase())}`],
-      [T().sys_gpu, esc(up(sys.gpu))],
-      [T().sys_disk, esc(up(sys.disk))],
-      [T().sys_device, esc(dev)],
-    ].map(([k, v]) => `<div class="kv"><span>${k}</span><b>${v}</b></div>`).join("");
+  function renderSystem() {
+    const rows = sys ? [
+      [T().sys_build, `${sys.build} · ${String(sys.edition).toUpperCase()}`],
+      [T().sys_gpu, sys.gpu === "any" ? T().any : String(sys.gpu).toUpperCase()],
+      [T().sys_disk, sys.disk === "any" ? T().any : String(sys.disk).toUpperCase()],
+      [T().sys_device, sys.device === "laptop" ? T().dev_laptop : sys.device === "desktop" ? T().dev_desktop : T().any]
+    ] : [[T().system_details,T().any]];
+    $("sysInfo").innerHTML = rows.map(([key,value]) => `<div class="kv"><span>${esc(key)}</span><b>${esc(value)}</b></div>`).join("");
   }
-  function renderSel() {
-    $("selCount").textContent = selected.size;
-    $("selTotal").textContent = CAT.tweaks.length;
-    $("selMeter").style.width = (selected.size / Math.max(CAT.tweaks.length, 1) * 100) + "%";
-  }
-
-  // ---------- requirements ----------
-  const REQ = {
-    SupportedBuild:  { icon: "WIN", ar: "إصدار ويندوز مدعوم", en: "Supported Windows build" },
-    DefenderToggled: { icon: "DEF", ar: "حماية Defender اللحظية", en: "Defender real-time protection" },
-    NoThirdPartyAv:  { icon: "AV",  ar: "لا يوجد مضاد فيروسات آخر", en: "No third-party antivirus" },
-    PluggedIn:       { icon: "AC",  ar: "موصول بالشاحن", en: "Plugged into power" },
-  };
   async function loadRequirements() {
-    if (TAURI) { try { reqStatuses = await invoke("check_requirements"); return; } catch (e) { /* keep last */ } }
-    else reqStatuses = [
-      { requirement: "SupportedBuild", met: "Pass", detail: "build 26100" },
-      { requirement: "DefenderToggled", met: "Fail", detail: "real-time protection is ON" },
-      { requirement: "NoThirdPartyAv", met: "Pass", detail: null },
-      { requirement: "PluggedIn", met: "NotApplicable", detail: "desktop" },
+    requirementsError = null;
+    if (TAURI) {
+      try { reqStatuses = await invoke("check_requirements"); }
+      catch (error) { reqStatuses = []; requirementsError = String(error); }
+    } else reqStatuses = [
+      {requirement:"SupportedBuild",met:"Pass",detail:"build 26100"},
+      {requirement:"DefenderToggled",met:"Fail",detail:"real-time protection is ON"},
+      {requirement:"NoThirdPartyAv",met:"Pass",detail:null},
+      {requirement:"PluggedIn",met:"NotApplicable",detail:"desktop"}
     ];
   }
-  function renderPreflight() {
+  function renderRequirements() {
+    const names = {SupportedBuild:T().req_windows,DefenderToggled:T().req_defender,NoThirdPartyAv:T().req_av,PluggedIn:T().req_power};
+    const notes = {SupportedBuild:T().req_windows_note,DefenderToggled:T().req_defender_note,NoThirdPartyAv:T().req_av_note,PluggedIn:T().req_power_note};
     const grid = $("reqList"); grid.innerHTML = "";
-    let anyFail = false;
-    reqStatuses.forEach(s => {
-      const met = String(s.met).toLowerCase();
-      const cls = met === "pass" ? "pass" : (met === "fail" ? "fail" : "na");
-      if (cls === "fail") anyFail = true;
-      const meta = REQ[s.requirement] || { icon: "?", ar: s.requirement, en: s.requirement };
-      const card = document.createElement("div");
-      card.className = "req " + cls;
-      card.innerHTML = `<div class="req-ic">${meta.icon}</div>
-        <div class="req-txt"><b>${meta[lang]}</b><small>${esc(s.detail || "")}</small></div>
-        <span class="tag ${cls}">${cls === "pass" ? T().req_pass : cls === "fail" ? T().req_fail : T().req_na}</span>`;
-      if (cls === "fail") {
-        const act = document.createElement("div");
-        act.className = "req-act";
-        if (s.requirement === "DefenderToggled") {
-          act.append(btn("primary sm", T().fix_auto, () => fixDefender(true)),
-                     btn("ghost sm", T().fix_manual, () => fixDefender(false)));
-        } else if (s.requirement !== "SupportedBuild") {
-          act.append(btn("ghost sm", T().recheck, loadAndRender));
-        }
-        card.appendChild(act);
+    if (requirementsError) grid.innerHTML = `<div class="req fail"><span class="req-status">!</span><div class="req-text"><b>${esc(T().load_error)}</b><details class="details"><summary>${esc(T().technical)}</summary><code class="technical-error">${esc(requirementsError)}</code></details></div></div>`;
+    reqStatuses.forEach(status => {
+      const state = status.met === "Pass" ? "pass" : status.met === "NotApplicable" ? "na" : "fail";
+      const row = document.createElement("div"); row.className = `req ${state}`;
+      row.innerHTML = `<span class="req-status" aria-hidden="true">${state === "pass" ? "✓" : state === "fail" ? "!" : "–"}</span><div class="req-text"><b>${esc(names[status.requirement] || status.requirement)}</b>${state === "fail" ? `<p>${esc(notes[status.requirement] || T().load_error)}</p>` : (state === "na" && status.requirement === "NoThirdPartyAv") ? `<p>${esc(T().req_av_unknown)}</p>` : ""}</div><span class="tag">${state === "pass" ? T().req_pass : state === "fail" ? T().req_fail : T().req_na}</span>`;
+      if (state === "fail" && status.requirement === "DefenderToggled") {
+        const button = document.createElement("button"); button.type = "button"; button.className = "req-action"; button.textContent = T().req_resolve;
+        button.onclick = async () => {
+          if (TAURI) { try { await invoke("open_windows_security"); } catch (e) { window.AZ_DIAG.show(e); } }
+          else { status.met = "Pass"; status.detail = null; renderRequirements(); }
+        };
+        row.appendChild(button);
       }
-      grid.appendChild(card);
+      if (state === "fail" && status.detail) {
+        const details = document.createElement("details"); details.className = "details";
+        details.innerHTML = `<summary>${esc(T().technical)}</summary><code class="technical-error">${esc(status.detail)}</code>${status.diagnostic ? window.AZ_DIAG.html(status.diagnostic) : ""}`;
+        row.querySelector(".req-text").appendChild(details);
+      }
+      grid.appendChild(row);
     });
-    $("preNext").disabled = anyFail;
-    $("preHint").textContent = reqStatuses.length ? (anyFail ? T().need_fix : T().all_ok) : "";
-    $("preHint").className = "navhint " + (anyFail ? "bad" : "ok");
+    const ready = !requirementsError && reqStatuses.length === 4 && reqStatuses.every(s => s.met === "Pass" || s.met === "NotApplicable");
+    $("preNext").disabled = !ready;
+    $("preHint").textContent = ready ? T().all_ok : T().need_fix;
+    $("preHint").className = `navhint ${ready ? "" : "bad"}`;
   }
-  async function fixDefender(auto) {
-    if (auto) {
-      if (!confirm(T().consent)) return;
-      if (TAURI) {
-        try { await invoke("run_preflight_fix", { requirement: "DefenderToggled" }); }
-        catch (e) { alert(T().fix_unavailable + " (" + e + ")"); await invoke("open_windows_security").catch(() => {}); }
-      }
-    } else if (TAURI) {
-      await invoke("open_windows_security").catch(() => {});
-    }
-    if (TAURI) return loadAndRender();
-    const d = reqStatuses.find(s => s.requirement === "DefenderToggled"); // preview only
-    if (d) { d.met = "Pass"; d.detail = null; }
-    renderPreflight();
-  }
-  async function loadAndRender() { await loadRequirements(); renderPreflight(); }
-
-  // ---------- options ----------
-  function applyProfile(name) {
-    if (name !== "custom") {
-      selected.clear();
-      CAT.tweaks.forEach(t => {
-        if (name === "balanced" && t.risk === "low" && t.default) selected.add(t.id);
-        if (name === "gaming" && t.risk !== "high") selected.add(t.id);
-      });
-    }
-    document.querySelectorAll(".prof").forEach(b => b.classList.toggle("on", b.dataset.prof === name));
-    renderOptions(); renderSel();
-  }
-  document.querySelectorAll(".prof").forEach(b => b.onclick = () => applyProfile(b.dataset.prof));
-
-  function renderOptions() {
-    const cat = PAGES[page];
-    $("catTitle").textContent = catLabel(cat);
-    $("pageNo").textContent = `${T().page} ${page + 1} ${T().of} ${PAGES.length}`;
-
-    const tabs = $("catTabs"); tabs.innerHTML = "";
-    PAGES.forEach((c, i) => {
-      const items = CAT.tweaks.filter(t => catOf(t) === c);
-      const on = items.filter(t => selected.has(t.id)).length;
-      const b = btn("tab" + (i === page ? " now" : ""), "", () => { page = i; renderOptions(); });
-      b.innerHTML = `${esc(catLabel(c))}<em>${on}/${items.length}</em>`;
-      tabs.appendChild(b);
-    });
-
-    const grid = $("cardGrid"); grid.innerHTML = "";
-    if (cat === "base") {
-      const n = document.createElement("p");
-      n.className = "note"; n.textContent = T().base_note;
-      grid.appendChild(n);
-    }
-    CAT.tweaks.filter(t => catOf(t) === cat).forEach(t => grid.appendChild(card(t)));
-
-    $("optHint").textContent = "";
-    $("optNext").textContent = page < PAGES.length - 1 ? T().next : T().rv_title;
-  }
-  function card(t) {
-    const el = document.createElement("label");
-    const on = selected.has(t.id);
-    el.className = "opt" + (on ? " on" : "") + (t.risk === "high" ? " high" : "");
-    const kinds = Object.entries(t.kinds || {}).map(([k, n]) =>
-      `<span>${esc((T().kinds[k]) || k)} <b>${n}</b></span>`).join("");
-    let tags = "";
-    if (t.risk === "high") tags += `<span class="tag fail">${T().risk_high}</span>`;
-    else if (t.risk === "medium") tags += `<span class="tag warn">${T().risk_medium}</span>`;
-    if (t.requires_reboot) tags += `<span class="tag">${T().reboot}</span>`;
-    el.innerHTML = `
-      <input type="checkbox" ${on ? "checked" : ""} />
-      <span class="opt-top"><b>${esc(nameOf(t))}</b><span class="track"><i></i></span></span>
-      <span class="opt-desc">${esc((t.description && t.description[lang]) || "")}</span>
-      <span class="opt-foot"><span class="kinds">${kinds}</span><span class="tags">${tags}</span></span>`;
-    el.querySelector("input").onchange = e => {
-      e.target.checked ? selected.add(t.id) : selected.delete(t.id);
-      el.classList.toggle("on", e.target.checked);
-      document.querySelectorAll(".prof").forEach(b => b.classList.toggle("on", b.dataset.prof === "custom"));
-      renderSel();
-      const tab = $("catTabs").children[page];
-      const items = CAT.tweaks.filter(x => catOf(x) === PAGES[page]);
-      if (tab) tab.querySelector("em").textContent = `${items.filter(x => selected.has(x.id)).length}/${items.length}`;
-    };
-    return el;
-  }
-  $("optNext").onclick = () => { if (page < PAGES.length - 1) { page++; renderOptions(); } else go("review"); };
-  $("optBack").onclick = () => { if (page > 0) { page--; renderOptions(); } else go("preflight"); };
-
-  // ---------- review ----------
-  function renderReview() {
-    const sel = CAT.tweaks.filter(t => selected.has(t.id));
-    const actions = sel.reduce((n, t) => n + t.actions_count, 0);
-    const reboot = sel.filter(t => t.requires_reboot).length;
-    const high = sel.filter(t => t.risk === "high");
-    const groups = PAGES.map(c => [c, sel.filter(t => catOf(t) === c)]).filter(([, l]) => l.length);
-    $("reviewBody").innerHTML = `
-      <div class="stats">
-        <div class="stat"><b>${sel.length}</b><span>${T().sel_count}</span></div>
-        <div class="stat"><b>${actions}</b><span>${T().act_count}</span></div>
-        <div class="stat"><b>${reboot}</b><span>${T().reboot_needed}</span></div>
-      </div>
-      ${high.length ? `<div class="warnbox"><b>${T().high_warn}</b> ${high.map(t => esc(nameOf(t))).join(" · ")}</div>` : ""}
-      <div class="rv">${groups.map(([c, l]) => `<div class="rv-g"><span class="eyebrow">${esc(catLabel(c))}</span>
-        ${l.map(t => `<div class="rv-i"><span>${esc(nameOf(t))}</span><em>${t.actions_count}</em></div>`).join("")}</div>`).join("")}</div>`;
-  }
-
-  // ---------- apply ----------
-  function logRow(label, state) {
-    const log = $("applyLog");
-    const row = document.createElement("div");
-    row.className = "row " + state;
-    const word = { applied: T().r_applied, already: T().r_already, na: T().r_na, failed: T().r_failed }[state] || "";
-    row.innerHTML = `<span>${esc(label)}</span><em>${word}</em>`;
-    log.appendChild(row); log.scrollTop = log.scrollHeight;
-  }
-  function setPct(p) { $("dial").style.setProperty("--p", p); $("pct").textContent = p; }
-
-  async function runApply() {
-    $("applyLog").innerHTML = ""; setPct(0);
-    const sel = CAT.tweaks.filter(t => selected.has(t.id));
-    const byId = Object.fromEntries(CAT.tweaks.map(t => [t.id, t]));
-
-    if (TAURI) {
-      const unlisten = await listen("apply-progress", ({ payload: p }) => {
-        const label = nameOf(byId[p.id]) || p.id;
-        $("statusLine").textContent = label;
-        logRow(label, p.state || (p.failed ? "failed" : "applied"));
-        setPct(Math.round(p.done / Math.max(p.total, 1) * 100));
-      });
-      try {
-        lastReport = await invoke("run_plan", { selected: sel.map(t => t.id), dryRun: false });
-      } catch (e) {
-        // the run could not start at all (e.g. system info unreadable): report it
-        lastReport = { counts: { applied: 0, already: 0, not_applicable: 0, failed: 1, skipped: 0 },
-                       failures: [["azizos", 0, String(e)]], archive: null };
-      }
-      unlisten(); setPct(100);
-      return go("done");
-    }
-
-    // ---- browser preview: deterministic mix of outcomes ----
-    const c = { applied: 0, already: 0, not_applicable: 0, failed: 0, skipped: 0 };
-    const failures = [];
-    for (let i = 0; i < sel.length; i++) {
-      const t = sel[i];
-      $("statusLine").textContent = nameOf(t);
-      const state = t.id === "disable-wu" ? "failed" : (t.id === "remove-onedrive" ? "already" : (t.id === "disable-print" ? "na" : "applied"));
-      if (state === "failed") { c.failed++; c.applied += t.actions_count - 1; failures.push([t.id, 3, "sc config wuauserv: exit code 5 (0x00000005) Access is denied."]); }
-      else if (state === "already") c.already += t.actions_count;
-      else if (state === "na") c.not_applicable += t.actions_count;
-      else { c.applied += Math.ceil(t.actions_count * 0.8); c.already += Math.floor(t.actions_count * 0.15); c.not_applicable += Math.floor(t.actions_count * 0.05); }
-      logRow(nameOf(t), state);
-      setPct(Math.round((i + 1) / sel.length * 100));
-      await new Promise(r => setTimeout(r, 140));
-    }
-    lastReport = { counts: c, failures, archive: "C:\\Users\\you\\Desktop\\Azizos-Report-20261110-2130" };
-    setTimeout(() => go("done"), 350);
-  }
-
-  // ---------- done ----------
-  function renderDone() {
-    const c = (lastReport && lastReport.counts) || { applied: 0, already: 0, not_applicable: 0, failed: 0 };
-    const ok = c.failed === 0;
-    const fails = (lastReport && lastReport.failures) || [];
-    const byId = Object.fromEntries(CAT.tweaks.map(t => [t.id, t]));
-    $("doneBody").innerHTML = `
-      <div class="donehead"><div class="mark ${ok ? "ok" : "warn"}" aria-hidden="true"></div>
-        <div><h1>${ok ? T().done_ok : T().done_some}</h1><p class="lead">${T().done_sub}</p></div></div>
-      <div class="stats four">
-        <div class="stat ok"><b>${c.applied}</b><span>${T().r_applied}</span></div>
-        <div class="stat"><b>${c.already}</b><span>${T().r_already}</span></div>
-        <div class="stat"><b>${c.not_applicable}</b><span>${T().r_na}</span></div>
-        <div class="stat ${c.failed ? "bad" : ""}"><b>${c.failed}</b><span>${T().r_failed}</span></div>
-      </div>
-      ${fails.length ? `<div class="failbox"><b>${T().failures_title}</b>${fails.map(f =>
-        `<div class="row"><span>${esc(nameOf(byId[f[0]]) || f[0])} · #${f[1] + 1}</span><code>${esc(f[2])}</code></div>`).join("")}</div>` : ""}
-      ${lastReport && lastReport.archive ? `<p class="muted small">${T().archive_note}</p><code class="path">${esc(lastReport.archive)}</code>` : ""}`;
-  }
-  $("finishBtn").onclick = async () => {
-    const auto = $("autoRestart").checked;
-    if (!TAURI) return alert(lang === "ar" ? "في التطبيق الحقيقي: إعادة تشغيل ثم فتح الأوبتمايزر." : "In the real app: restart, then open the Optimizer.");
-    try {
-      const r = await invoke("finish", { autoRestart: auto });
-      if (!r.restarting) alert(r.optimizer_scheduled ? T().finish_manual : T().finish_manual_no_opt);
-    } catch (e) { alert(String(e)); }
+  $("recheckBtn").onclick = async () => {
+    $("recheckBtn").disabled = true; $("preNext").disabled = true;
+    $("recheckBtn").textContent = T().checking;
+    try { await loadRequirements(); renderRequirements(); }
+    finally { $("recheckBtn").disabled = false; $("recheckBtn").textContent = T().recheck; }
   };
 
-  // ---------- boot ----------
-  Promise.all([loadRequirements(), loadSys()]).then(() => {
-    document.querySelectorAll(".prof").forEach(b => b.classList.toggle("on", b.dataset.prof === "custom"));
-    applyLang(); go("welcome");
+  function renderCategorySelect() {
+    const previous = $("categorySelect").value;
+    $("categorySelect").innerHTML = `<option value="all">${esc(T().all_categories)}</option>` + categories.map(c => `<option value="${c}">${esc(categoryName(c))}</option>`).join("");
+    $("categorySelect").value = categories.includes(previous) ? previous : "all";
+  }
+  function renderSelection() {
+    $("selectionLine").textContent = `${selected.size} ${T().selected}`;
+    $("optNext").disabled = selected.size === 0;
+  }
+  function renderOptions() {
+    const filter = $("categorySelect").value || "all";
+    const grid = $("cardGrid"); grid.innerHTML = "";
+    CAT.tweaks.filter(t => filter === "all" || categoryOf(t) === filter).forEach(t => {
+      const option = document.createElement("article"); option.className = "option";
+      const kinds = Object.entries(t.kinds || {}).map(([kind,count]) => `${T().kinds[kind] || kind}: ${count}`).join(" · ");
+      option.innerHTML = `<label class="option-main"><input type="checkbox" data-tweak="${esc(t.id)}" ${selected.has(t.id) ? "checked" : ""} /><span class="option-copy"><span class="option-title">${esc(nameOf(t))}</span><span class="option-description">${esc(t.description?.[lang] || "")}</span><span class="option-tags">${t.risk === "high" ? `<span class="tag risk">${T().risk_high}</span>` : t.risk === "medium" ? `<span class="tag">${T().risk_medium}</span>` : ""}${t.requires_reboot ? `<span class="tag">${T().reboot}</span>` : ""}</span></span></label><details class="details"><summary>${T().action_details}</summary><p>${t.actions_count} ${T().actions} · ${esc(kinds)}</p></details>`;
+      option.querySelector("input").onchange = event => {
+        event.target.checked ? selected.add(t.id) : selected.delete(t.id);
+        $("profileSelect").value = "custom"; renderSelection();
+      };
+      grid.appendChild(option);
+    });
+    renderSelection();
+  }
+  $("categorySelect").onchange = renderOptions;
+  $("profileSelect").onchange = event => {
+    const preset = event.target.value;
+    if (preset !== "custom") {
+      selected.clear();
+      CAT.tweaks.forEach(t => { if (preset === "balanced" ? t.risk === "low" && t.default : t.risk !== "high") selected.add(t.id); });
+    }
+    renderOptions();
+  };
+  function renderReview() {
+    const choices = selectedTweaks();
+    const high = choices.filter(t => t.risk === "high");
+    const restart = choices.some(t => t.requires_reboot);
+    $("reviewBody").innerHTML = `<div class="review-summary"><div class="summary-row"><span>${T().selection}</span><b>${choices.length}</b></div><div class="summary-row"><span>${T().restart_needed}</span><b>${restart ? T().yes : T().no}</b></div></div>${high.length ? `<p class="warning"><strong>${T().high_warn}</strong><br>${high.map(t => esc(nameOf(t))).join("، ")}</p>` : ""}<details class="details"><summary>${T().selected_details}</summary><ul class="review-list">${choices.map(t => `<li>${esc(nameOf(t))}</li>`).join("")}</ul></details>`;
+    $("previewResult").textContent = "";
+  }
+  $("previewBtn").onclick = async () => {
+    const button = $("previewBtn"); button.disabled = true; $("previewResult").textContent = T().preview_working;
+    try {
+      if (!TAURI) { $("previewResult").textContent = T().preview_app_only; return; }
+      const counts = await invoke("preview_plan", {selected:[...selected]});
+      $("previewResult").textContent = `${T().preview_changes}: ${counts.applied} · ${T().r_already}: ${counts.already} · ${T().r_na}: ${counts.not_applicable} · ${T().r_failed}: ${counts.failed}. ${T().preview_limit}`;
+      if (counts.diagnostics?.length) window.AZ_DIAG.show(counts.diagnostics[0][2]);
+    } catch (e) { $("previewResult").textContent = String(e); }
+    finally { button.disabled = false; }
+  };
+
+  function setProgress(value, id) {
+    const percent = Math.max(0,Math.min(100,Math.round(value)));
+    $("pct").textContent = percent; $("progressFill").style.width = `${percent}%`;
+    $("progressTrack").setAttribute("aria-valuenow",String(percent));
+    if (id) $("statusLine").textContent = nameOf(CAT.tweaks.find(t => t.id === id)) || id;
+  }
+  async function runApply() {
+    running = true; setProgress(0); $("statusLine").textContent = T().checking;
+    let unlisten = null;
+    try {
+      if (TAURI) {
+        unlisten = await window.__TAURI__.event.listen("apply-progress", ({payload:p}) => setProgress(p.done / Math.max(p.total,1) * 100,p.id));
+        lastReport = await invoke("run_plan", {selected:[...selected],dryRun:false});
+      } else {
+        // Browser design preview only; it never invokes system operations.
+        const choices = selectedTweaks();
+        const counts = {applied:0,already:0,not_applicable:0,failed:0,skipped:0};
+        for (let i=0;i<choices.length;i++) {
+          const t = choices[i]; counts.applied += t.actions_count;
+          setProgress((i+1)/choices.length*100,t.id);
+          await new Promise(resolve => setTimeout(resolve,140));
+        }
+        lastReport = {counts,failures:[],archive:null};
+      }
+    } catch (e) {
+      lastReport = {aborted:true,counts:null,failures:[["azizos",null,String(e)]],diagnostics:e.diagnostic ? [["azizos",null,e.diagnostic]] : [],archive:null};
+    } finally {
+      if (unlisten) { try { unlisten(); } catch (e) { void window.AZ_DIAG.record("progress_cleanup", e); } }
+      running = false; setProgress(100); go("done");
+    }
+  }
+  function renderDone() {
+    const counts = lastReport?.counts || {applied:0,already:0,not_applicable:0,failed:0};
+    const failures = lastReport?.failures || [];
+    const renderFailure = (id, index, error) => {
+      const diagnostic = lastReport?.diagnostics?.find(d => d[0] === id && d[1] === index)?.[2];
+      const step = index == null ? T().operation : index > 1000000 ? "verify" : `#${index+1}`;
+      return `<div class="failure-item"><b>${esc(nameOf(CAT.tweaks.find(t => t.id === id)) || id)} · ${esc(step)}</b>${diagnostic ? window.AZ_DIAG.html(diagnostic) : `<code>${esc(error)}</code>`}</div>`;
+    };
+    $("doneBody").innerHTML = `<h1 id="doneTitle">${lastReport?.aborted ? T().done_aborted : counts.failed ? T().done_some : T().done_ok}</h1><p class="result-message">${!TAURI ? T().finish_preview : lastReport?.aborted ? T().aborted_note : counts.failed ? T().done_errors : T().done_sub}</p><div class="result-overview" ${lastReport?.aborted ? "hidden" : ""}>${[[T().r_applied,counts.applied],[T().r_already,counts.already],[T().r_na,counts.not_applicable],[T().r_failed,counts.failed]].map(([label,count],i) => `<div class="summary-row ${i === 3 && count ? "has-errors" : ""}"><span>${label}</span><b>${count}</b></div>`).join("")}</div>${failures.length ? `<details class="details"><summary>${T().failures_title} (${failures.length})</summary>${failures.map(([id,index,error]) => renderFailure(id,index,error)).join("")}</details>` : ""}${lastReport?.archive ? `<details class="details"><summary>${T().archive_note}</summary><code class="archive-path">${esc(lastReport.archive)}</code></details>` : ""}`;
+    $("finishBtn").textContent = $("autoRestart").checked && !lastReport?.aborted ? T().restart_now : T().finish;
+    window.AZ_DIAG.showRepairs(lastReport?.log?.recoveries);
+    if (lastReport?.log?.error) window.AZ_DIAG.show({message:`Logging error: ${lastReport.log.error}`});
+  }
+  $("finishBtn").onclick = async () => {
+    const button = $("finishBtn"); button.disabled = true;
+    try {
+      if (!TAURI) { $("finishStatus").textContent = T().finish_preview; return; }
+      const result = await invoke("finish", {autoRestart:$("autoRestart").checked && !lastReport?.aborted});
+      if (!result.restarting) $("finishStatus").textContent = result.optimizer_scheduled ? T().finish_manual : T().finish_manual_no_opt;
+    } catch (e) { $("finishStatus").textContent = String(e); }
+    finally { button.disabled = false; }
+  };
+  window.addEventListener("azizos-app-repaired", () => {
+    if (running) return;
+    Promise.all([loadRequirements(),loadSystem()]).then(() => applyLanguage()).catch(e => window.AZ_DIAG.show(e));
   });
+  applyLanguage();
+  Promise.all([loadRequirements(),loadSystem()]).then(() => { applyLanguage(); go(current); });
 })();

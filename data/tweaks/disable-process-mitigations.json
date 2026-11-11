@@ -1,26 +1,25 @@
 {
-    "id":  "disable-process-mitigations",
-    "name":  {
-                 "ar":  "تعطيل تخفيفات العمليات",
-                 "en":  "Disable Process Mitigations"
-             },
-    "category":  "security",
-    "profiles":  [
-
-                 ],
-    "default":  false,
-    "requires_reboot":  false,
-    "risk":  "high",
-    "actions":  [
-                    {
-                        "type":  "bundled",
-                        "file":  "disable-process-mitigations.bat",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    }
-                ],
-    "description":  {
-                        "ar":  "مكسب بسيط في المعالج مقابل حماية أضعف من الثغرات.",
-                        "en":  "Small CPU gain, weaker exploit protection."
-                    }
+    "id": "disable-process-mitigations",
+    "name": {
+        "ar": "تعطيل تخفيفات العمليات",
+        "en": "Disable Process Mitigations"
+    },
+    "category": "security",
+    "profiles": [],
+    "default": false,
+    "requires_reboot": false,
+    "risk": "high",
+    "actions": [
+        {
+            "type": "bundled",
+            "file": "disable-process-mitigations.bat",
+            "args": "",
+            "runas": "user_elevated"
+        }
+    ],
+    "description": {
+        "ar": "مكسب بسيط في المعالج مقابل حماية أضعف من الثغرات.",
+        "en": "Small CPU gain, weaker exploit protection."
+    },
+    "order": 250
 }

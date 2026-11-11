@@ -1,0 +1,216 @@
+{
+  "DEVMANVIEW.CMD": [
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "PCI Encryption/Decryption Controller"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "AMD PSP"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "Intel SMBus"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "Intel Management Engine"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "PCI Memory Controller"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "PCI standard RAM Controller"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "WAN Miniport (IKEv2)"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "WAN Miniport (IP)"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "WAN Miniport (IPv6)"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "WAN Miniport (L2TP)"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "WAN Miniport (Network Monitor)"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "WAN Miniport (PPPOE)"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "WAN Miniport (PPTP)"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "WAN Miniport (SSTP)"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "Programmable Interrupt Controller"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "Numeric Data Processor"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "Communications Port (COM1)"
+    },
+    {
+      "type": "device",
+      "op": "disable",
+      "name": "Microsoft GS Wavetable Synth"
+    }
+  ],
+  "powerplan.bat": [
+    {
+      "type": "power_profile",
+      "desktop_import": "Azizos.pow"
+    }
+  ],
+  "filters.bat": [
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e96c-e325-11ce-bfc1-08002be10318}",
+      "name": "UpperFilters",
+      "kind": "multi_sz",
+      "data": []
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SYSTEM\\CurrentControlSet\\Control\\Class\\{6bdd1fc6-810f-11d0-bec7-08002be2092f}",
+      "name": "UpperFilters",
+      "kind": "multi_sz",
+      "data": []
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SYSTEM\\CurrentControlSet\\Control\\Class\\{ca3e7ab9-b4c3-4ae6-8251-579ef933890f}",
+      "name": "UpperFilters",
+      "kind": "multi_sz",
+      "data": []
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e967-e325-11ce-bfc1-08002be10318}",
+      "name": "LowerFilters",
+      "kind": "multi_sz",
+      "data": []
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SYSTEM\\CurrentControlSet\\Control\\Class\\{71a27cdd-812a-11d0-bec7-08002be2092f}",
+      "name": "LowerFilters",
+      "kind": "multi_sz",
+      "data": []
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SYSTEM\\CurrentControlSet\\Control\\Class\\{71a27cdd-812a-11d0-bec7-08002be2092f}",
+      "name": "UpperFilters",
+      "kind": "multi_sz",
+      "data": []
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SYSTEM\\CurrentControlSet\\Services\\Dhcp",
+      "name": "DependOnService",
+      "kind": "multi_sz",
+      "data": [
+        "NSI",
+        "Afd"
+      ]
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SYSTEM\\CurrentControlSet\\Services\\Wcmsvc",
+      "name": "DependOnService",
+      "kind": "multi_sz",
+      "data": [
+        "NSI",
+        "Afd"
+      ]
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SYSTEM\\CurrentControlSet\\Services\\Dnscache",
+      "name": "DependOnService",
+      "kind": "multi_sz",
+      "data": [
+        "nsi"
+      ]
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hklm",
+      "path": "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform",
+      "name": "InactivityShutdownDelay",
+      "kind": "dword",
+      "data": 4294967295
+    },
+    {
+      "type": "registry",
+      "op": "set",
+      "hive": "hkcu",
+      "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer",
+      "name": "link",
+      "kind": "binary",
+      "data": "00000000"
+    },
+    {
+      "type": "registry",
+      "op": "delete",
+      "hive": "hkcu",
+      "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\NamingTemplates",
+      "name": "ShortcutNameTemplate"
+    }
+  ]
+}

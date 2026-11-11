@@ -1,41 +1,40 @@
 {
-    "id":  "disable-defender",
-    "name":  {
-                 "ar":  "تعطيل مكافح الفيروسات (Defender)",
-                 "en":  "Disable Windows Defender"
-             },
-    "category":  "security",
-    "profiles":  [
-
-                 ],
-    "default":  true,
-    "requires_reboot":  false,
-    "risk":  "high",
-    "actions":  [
-                    {
-                        "type":  "bundled",
-                        "file":  "DisableDefender.ps1",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "DisableDefenderServices.bat",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "SOFTWARE\\Azizos",
-                        "name":  "DisableDefender",
-                        "kind":  "dword",
-                        "data":  1
-                    }
-                ],
-    "description":  {
-                        "ar":  "اختيار البلاي بوك الخاص بك. يترك الجهاز بدون مضاد الفيروسات المدمج.",
-                        "en":  "Your playbook\u0027s own choice. Leaves the PC without built-in antivirus."
-                    }
+    "id": "disable-defender",
+    "name": {
+        "ar": "تعطيل مكافح الفيروسات (Defender)",
+        "en": "Disable Windows Defender"
+    },
+    "category": "security",
+    "profiles": [],
+    "default": true,
+    "requires_reboot": false,
+    "risk": "high",
+    "actions": [
+        {
+            "type": "bundled",
+            "file": "DisableDefender.ps1",
+            "args": "",
+            "runas": "user_elevated"
+        },
+        {
+            "type": "bundled",
+            "file": "DisableDefenderServices.bat",
+            "args": "",
+            "runas": "user_elevated"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "SOFTWARE\\Azizos",
+            "name": "DisableDefender",
+            "kind": "dword",
+            "data": 1
+        }
+    ],
+    "description": {
+        "ar": "اختيار البلاي بوك الخاص بك. يترك الجهاز بدون مضاد الفيروسات المدمج.",
+        "en": "Your playbook's own choice. Leaves the PC without built-in antivirus."
+    },
+    "order": 250
 }

@@ -1,55 +1,59 @@
 {
-    "id":  "core-components",
-    "name":  {
-                 "ar":  "مكوّنات ويندوز",
-                 "en":  "Windows components"
-             },
-    "category":  "performance",
-    "profiles":  [
-
-                 ],
-    "default":  true,
-    "requires_reboot":  false,
-    "risk":  "low",
-    "actions":  [
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\Memory Diagnostics Tool.lnk"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\ODBC Data Sources (32-bit).lnk"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\ODBC Data Sources (64-bit).lnk"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\System Configuration.lnk"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\RecoveryDrive.lnk"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\Defragment and Optimize Drives.lnk"
-                    },
-                    {
-                        "type":  "powershell",
-                        "script":  "set-executionpolicy unrestricted -force",
-                        "runas":  "user_elevated"
-                    }
-                ],
-    "description":  {
-                        "ar":  "يوقف المكوّنات الاختيارية اللي ما يحتاجها اللعب.",
-                        "en":  "Turns off optional components that are not needed for gaming."
-                    }
+    "id": "core-components",
+    "name": {
+        "ar": "مكوّنات ويندوز",
+        "en": "Windows components"
+    },
+    "category": "performance",
+    "profiles": [],
+    "default": true,
+    "requires_reboot": false,
+    "risk": "low",
+    "actions": [
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\Memory Diagnostics Tool.lnk"
+        },
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\ODBC Data Sources (32-bit).lnk"
+        },
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\ODBC Data Sources (64-bit).lnk"
+        },
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\System Configuration.lnk"
+        },
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\RecoveryDrive.lnk"
+        },
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "%ProgramData%\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Administrative Tools\\\\Defragment and Optimize Drives.lnk"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\PowerShell\\1\\ShellIds\\Microsoft.PowerShell",
+            "name": "ExecutionPolicy",
+            "kind": "sz",
+            "data": "Unrestricted",
+            "ignore_errors": true
+        }
+    ],
+    "description": {
+        "ar": "يوقف المكوّنات الاختيارية اللي ما يحتاجها اللعب.",
+        "en": "Turns off optional components that are not needed for gaming."
+    },
+    "order": 400
 }

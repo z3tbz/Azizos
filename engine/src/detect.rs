@@ -137,6 +137,15 @@ pub fn check_requirements<D: Detector>(d: &D) -> Vec<RequirementStatus> {
             met: Met::Fail,
             detail: Some(list.join(", ")),
         },
+        // REGDB_E_CLASSNOTREG: this Windows has no Security Center at all (an
+        // already-debloated system — e.g. a second run of this very playbook).
+        // The product list cannot be read, which is not the same as "an
+        // antivirus is installed": say exactly that and do not block the run.
+        Err(e) if e.contains("0x80040154") => RequirementStatus {
+            requirement: Requirement::NoThirdPartyAv,
+            met: Met::NotApplicable,
+            detail: Some("Security Center is not present on this Windows, so antivirus products cannot be listed. If one is installed, uninstall it first.".into()),
+        },
         Err(e) => RequirementStatus {
             requirement: Requirement::NoThirdPartyAv,
             met: Met::Fail,
@@ -230,5 +239,33 @@ mod tests {
         let s = check_requirements(&m);
         assert_eq!(s[2].met, Met::Fail);
         assert!(!all_satisfied(&s));
+    }
+
+    #[test]
+    fn missing_security_center_is_unknown_not_a_block() {
+        struct NoWsc;
+        impl Detector for NoWsc {
+            fn profile(&self) -> Result<SystemProfile, String> {
+                Ok(SystemProfile { build: 26100, edition: "pro".into(), device: Device::Desktop, gpu: Gpu::Any, disk: Disk::Any })
+            }
+            fn defender_realtime_on(&self) -> Result<bool, String> { Ok(false) }
+            fn third_party_av(&self) -> Result<Vec<String>, String> {
+                Err("Security Center: Class not registered (0x80040154)".into())
+            }
+            fn on_ac_power(&self) -> Result<Option<bool>, String> { Ok(None) }
+        }
+        let s = check_requirements(&NoWsc);
+        assert_eq!(s[2].met, Met::NotApplicable);
+        assert!(s[2].detail.as_ref().unwrap().contains("cannot be listed"));
+        assert!(all_satisfied(&s));
+        // any other read failure still blocks: unknown for an unknown reason
+        struct Broken;
+        impl Detector for Broken {
+            fn profile(&self) -> Result<SystemProfile, String> { NoWsc.profile() }
+            fn defender_realtime_on(&self) -> Result<bool, String> { Ok(false) }
+            fn third_party_av(&self) -> Result<Vec<String>, String> { Err("Security Center: Access is denied (0x80070005)".into()) }
+            fn on_ac_power(&self) -> Result<Option<bool>, String> { Ok(None) }
+        }
+        assert_eq!(check_requirements(&Broken)[2].met, Met::Fail);
     }
 }

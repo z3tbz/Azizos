@@ -7,16 +7,13 @@
 //!     zero wrapper cost),
 //!   * GPU vendor -> PCI vendor id in the display-class registry key,
 //!   * system-disk SSD/HDD -> DeviceIoControl on the system volume,
-//!   * registered AV products -> one hidden PowerShell call (they live only
-//!     in WMI SecurityCenter2, which has no lighter public interface).
+//!   * registered AV products -> Windows Security Center COM (IWSCProductList).
+//! No child process is started anywhere in detection.
 //! Nothing here changes the machine.
 
 use crate::catalog::SystemProfile;
 use crate::detect::Detector;
-use crate::exec_windows::{encode_ps, CREATE_NO_WINDOW};
 use crate::schema::{Device, Disk, Gpu};
-use std::os::windows::process::CommandExt;
-use std::process::{Command, Stdio};
 use windows_registry::LOCAL_MACHINE;
 
 pub struct WindowsDetector;
@@ -30,20 +27,6 @@ fn reg_string(path: &str, name: &str) -> Option<String> {
 }
 fn reg_u32(path: &str, name: &str) -> Option<u32> {
     LOCAL_MACHINE.open(path).ok()?.get_u32(name).ok()
-}
-
-/// Run a read-only PowerShell query without a console window; stdout trimmed.
-fn ps_query(script: &str) -> String {
-    let exe = std::path::PathBuf::from(std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".into()))
-        .join(r"System32\WindowsPowerShell\v1.0\powershell.exe");
-    Command::new(exe)
-        .creation_flags(CREATE_NO_WINDOW)
-        .stdin(Stdio::null())
-        .args(["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand"])
-        .arg(encode_ps(script))
-        .output()
-        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-        .unwrap_or_default()
 }
 
 /// Map the registry `EditionID` to our compat tags.
@@ -142,8 +125,9 @@ impl Detector for WindowsDetector {
         let edition = normalize_edition(&reg_string(CURVER, "EditionID").unwrap_or_default());
         // BatteryFlag 128 = "no system battery".
         let device = match power_status() {
-            Some((_, flag)) if flag != 128 => Device::Laptop,
-            _ => Device::Desktop,
+            Some((_, 128)) => Device::Desktop,
+            Some((_, 255)) | None => Device::Any,
+            Some(_) => Device::Laptop,
         };
         Ok(SystemProfile { build, edition, device, gpu: detect_gpu(), disk: detect_disk() })
     }
@@ -159,19 +143,13 @@ impl Detector for WindowsDetector {
     }
 
     fn third_party_av(&self) -> Result<Vec<String>, String> {
-        let out = ps_query(
-            "Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntiVirusProduct -ErrorAction SilentlyContinue \
-             | Select-Object -ExpandProperty displayName",
-        );
-        Ok(out
-            .lines()
-            .map(str::trim)
-            .filter(|l| !l.is_empty())
-            .filter(|l| {
-                let lc = l.to_ascii_lowercase();
+        // Windows Security Center's own product list (in-process COM).
+        Ok(crate::com::antivirus_products()?
+            .into_iter()
+            .filter(|n| {
+                let lc = n.to_ascii_lowercase();
                 !(lc.contains("windows defender") || lc.contains("microsoft defender"))
             })
-            .map(str::to_string)
             .collect())
     }
 
@@ -180,8 +158,11 @@ impl Detector for WindowsDetector {
         if flag == 128 {
             return Ok(None); // desktop: not applicable
         }
-        // ACLineStatus: 0 offline, 1 online, 255 unknown (don't block on unknown).
-        Ok(Some(line != 0))
+        match line {
+            0 => Ok(Some(false)),
+            1 => Ok(Some(true)),
+            _ => Err("AC power state is unknown".into()),
+        }
     }
 }
 

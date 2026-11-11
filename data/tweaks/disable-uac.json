@@ -1,35 +1,34 @@
 {
-    "id":  "disable-uac",
-    "name":  {
-                 "ar":  "تعطيل التحكم بحساب المستخدم (UAC)",
-                 "en":  "Disable User Account Control"
-             },
-    "category":  "security",
-    "profiles":  [
-
-                 ],
-    "default":  false,
-    "requires_reboot":  true,
-    "risk":  "high",
-    "actions":  [
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
-                        "name":  "EnableLUA",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "service",
-                        "name":  "luafv",
-                        "op":  "change",
-                        "startup":  "disabled"
-                    }
-                ],
-    "description":  {
-                        "ar":  "بدون نوافذ تأكيد الصلاحيات. البرامج تاخذ صلاحية المسؤول بصمت.",
-                        "en":  "No elevation prompts. Programs get admin rights silently."
-                    }
+    "id": "disable-uac",
+    "name": {
+        "ar": "تعطيل التحكم بحساب المستخدم (UAC)",
+        "en": "Disable User Account Control"
+    },
+    "category": "security",
+    "profiles": [],
+    "default": false,
+    "requires_reboot": true,
+    "risk": "high",
+    "actions": [
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+            "name": "EnableLUA",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "service",
+            "name": "luafv",
+            "op": "change",
+            "startup": "disabled"
+        }
+    ],
+    "description": {
+        "ar": "بدون نوافذ تأكيد الصلاحيات. البرامج تاخذ صلاحية المسؤول بصمت.",
+        "en": "No elevation prompts. Programs get admin rights silently."
+    },
+    "order": 250
 }

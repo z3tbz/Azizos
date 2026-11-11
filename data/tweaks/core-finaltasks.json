@@ -1,66 +1,63 @@
 {
-    "id":  "core-finaltasks",
-    "name":  {
-                 "ar":  "التنظيف النهائي",
-                 "en":  "Final clean-up"
-             },
-    "category":  "performance",
-    "profiles":  [
-
-                 ],
-    "default":  true,
-    "requires_reboot":  false,
-    "risk":  "low",
-    "actions":  [
-                    {
-                        "type":  "appx",
-                        "name":  "*Client.CBS*",
-                        "scope":  "family",
-                        "op":  "clear_cache"
-                    },
-                    {
-                        "type":  "appx",
-                        "name":  "*StartMenuExperienceHost*",
-                        "scope":  "family",
-                        "op":  "clear_cache"
-                    },
-                    {
-                        "type":  "appx",
-                        "name":  "*Windows.Search*",
-                        "scope":  "family",
-                        "op":  "clear_cache"
-                    },
-                    {
-                        "type":  "appx",
-                        "name":  "*TCUI*",
-                        "scope":  "family",
-                        "op":  "clear_cache"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "Apply-AzizosWallpaper.ps1",
-                        "args":  "-Style Horizon",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "powerplan.bat",
-                        "args":  "",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "command",
-                        "exe":  "DISM",
-                        "args":  "/Online /set-reservedstoragestate /state:disabled"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "%SystemDrive%\\\\Windows\\\\System32\\\\OneDriveSetup.exe"
-                    }
-                ],
-    "description":  {
-                        "ar":  "ينهي العمليات الخلفية المتبقية وينظّف الملفات المؤقتة.",
-                        "en":  "Ends leftover background processes and tidies temporary files."
-                    }
+    "id": "core-finaltasks",
+    "name": {
+        "ar": "التنظيف النهائي",
+        "en": "Final clean-up"
+    },
+    "category": "performance",
+    "profiles": [],
+    "default": true,
+    "requires_reboot": false,
+    "risk": "low",
+    "actions": [
+        {
+            "type": "appx",
+            "name": "*Client.CBS*",
+            "scope": "family",
+            "op": "clear_cache"
+        },
+        {
+            "type": "appx",
+            "name": "*StartMenuExperienceHost*",
+            "scope": "family",
+            "op": "clear_cache"
+        },
+        {
+            "type": "appx",
+            "name": "*Windows.Search*",
+            "scope": "family",
+            "op": "clear_cache"
+        },
+        {
+            "type": "appx",
+            "name": "*TCUI*",
+            "scope": "family",
+            "op": "clear_cache"
+        },
+        {
+            "type": "bundled",
+            "file": "Apply-AzizosWallpaper.ps1",
+            "args": "-Style Horizon",
+            "runas": "user_elevated"
+        },
+        {
+            "type": "power_profile",
+            "desktop_import": "Azizos.pow"
+        },
+        {
+            "type": "command",
+            "exe": "DISM",
+            "args": "/Online /set-reservedstoragestate /state:disabled"
+        },
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "%SystemDrive%\\\\Windows\\\\System32\\\\OneDriveSetup.exe"
+        }
+    ],
+    "description": {
+        "ar": "ينهي العمليات الخلفية المتبقية وينظّف الملفات المؤقتة.",
+        "en": "Ends leftover background processes and tidies temporary files."
+    },
+    "order": 1000
 }

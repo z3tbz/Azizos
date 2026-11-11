@@ -65,8 +65,17 @@ impl Catalog {
     pub fn from_json_docs<I: IntoIterator<Item = String>>(docs: I) -> Result<Self, String> {
         let mut tweaks = Vec::new();
         for (n, doc) in docs.into_iter().enumerate() {
-            let t: Tweak = serde_json::from_str(&doc)
+            let mut t: Tweak = serde_json::from_str(&doc)
                 .map_err(|e| format!("tweak #{n}: {e}"))?;
+            normalize(&mut t);
+            // `"ignore_errors": true` sits on the action itself in the file.
+            if let Ok(raw) = serde_json::from_str::<serde_json::Value>(&doc) {
+                for (i, a) in raw["actions"].as_array().into_iter().flatten().enumerate() {
+                    if a["ignore_errors"].as_bool() == Some(true) && !t.ignore_errors.contains(&i) {
+                        t.ignore_errors.push(i);
+                    }
+                }
+            }
             tweaks.push(t);
         }
         Catalog::new(tweaks).map_err(|e| e.to_string())
@@ -75,6 +84,36 @@ impl Catalog {
     pub fn all(&self) -> &[Tweak] {
         &self.tweaks
     }
+}
+
+/// A registry key path exactly as the Reg* API wants it: no leading or
+/// trailing backslash and no doubled ones. Playbooks are written by hand
+/// (`HKCU\\Software\\\\X`, `\SOFTWARE\X\`), and Windows rejects those with
+/// ERROR_BAD_PATHNAME — so they are cleaned once, when the catalog loads, and
+/// every later step (snapshot, apply, verify, rollback) sees the clean path.
+pub fn registry_path(p: &str) -> String {
+    p.split('\\').filter(|s| !s.is_empty()).collect::<Vec<_>>().join("\\")
+}
+
+fn normalize(t: &mut Tweak) {
+    use crate::schema::{Action, Check};
+    let fix = |a: &mut Action| {
+        if let Action::Registry { path, .. } = a {
+            *path = registry_path(path);
+        }
+    };
+    t.actions.iter_mut().for_each(fix);
+    if let Some(r) = t.revert.as_mut() {
+        r.iter_mut().for_each(fix);
+    }
+    for c in &mut t.verify {
+        if let Check::Registry { path, .. } = c {
+            *path = registry_path(path);
+        }
+    }
+}
+
+impl Catalog {
 
     pub fn get(&self, id: &str) -> Option<&Tweak> {
         self.index.get(id).map(|&i| &self.tweaks[i])
@@ -149,7 +188,9 @@ impl Catalog {
             .filter(|(_, &d)| d == 0)
             .map(|(&k, _)| k)
             .collect();
-        ready.sort_unstable(); // deterministic
+        let priority = |a: &&str, b: &&str| self.get(a).unwrap().order.cmp(&self.get(b).unwrap().order).then(a.cmp(b));
+        ready.sort_by(priority);
+        ready.reverse(); // pop the earliest source action first
         let mut order: Vec<String> = Vec::new();
         while let Some(n) = ready.pop() {
             order.push(n.to_string());
@@ -162,8 +203,9 @@ impl Catalog {
                         newly.push(m);
                     }
                 }
-                newly.sort_unstable();
                 ready.extend(newly);
+                ready.sort_by(priority);
+                ready.reverse();
             }
         }
         if order.len() != ids.len() {
@@ -174,9 +216,13 @@ impl Catalog {
         // 4: phase split — immediate first, reboot-required last, order preserved.
         let mut immediate = Vec::new();
         let mut deferred = Vec::new();
+        let mut defer_remaining = false;
         for id in order {
             let t = self.get(&id).unwrap();
-            if t.requires_reboot {
+            // A phase split must never move a dependent/finalizer before its
+            // prerequisite. Once deferring starts, keep the remaining suffix.
+            defer_remaining |= t.requires_reboot;
+            if defer_remaining {
                 deferred.push(id);
             } else {
                 immediate.push(id);
@@ -278,6 +324,27 @@ mod tests {
             assert!(plan.skipped_incompatible.is_empty(), "{build}/{edition}: {:?}", plan.skipped_incompatible);
             assert_eq!(plan.total(), 25);
         }
+    }
+
+    #[test]
+    fn reboot_phase_never_moves_a_dependency_after_its_consumer() {
+        let mut first = mk("first", 19044, true, &[]);
+        first.order = 1;
+        let mut last = mk("last", 19044, false, &["first"]);
+        last.order = 2;
+        let cat = Catalog::new(vec![last, first]).unwrap();
+        let plan = cat.plan(&["last".into()], &sys()).unwrap();
+        assert!(plan.immediate.is_empty());
+        assert_eq!(plan.deferred, ["first", "last"]);
+    }
+
+    #[test]
+    fn shipped_finalizer_is_always_last() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/tweaks");
+        let cat = Catalog::from_json_docs(std::fs::read_dir(dir).unwrap().map(|e| std::fs::read_to_string(e.unwrap().path()).unwrap())).unwrap();
+        let selected = cat.all().iter().map(|t| t.id.clone()).collect::<Vec<_>>();
+        let plan = cat.plan(&selected, &sys()).unwrap();
+        assert_eq!(plan.deferred.last().map(String::as_str), Some("core-finaltasks"));
     }
 
     #[test]

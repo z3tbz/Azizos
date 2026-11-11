@@ -1,25 +1,24 @@
 {
-    "id":  "7zip",
-    "name":  {
-                 "ar":  "7-Zip",
-                 "en":  "7-Zip"
-             },
-    "category":  "performance",
-    "profiles":  [
-
-                 ],
-    "default":  false,
-    "requires_reboot":  false,
-    "risk":  "low",
-    "actions":  [
-                    {
-                        "type":  "installer",
-                        "file":  "7zip.exe",
-                        "args":  "/S"
-                    }
-                ],
-    "description":  {
-                        "ar":  "برنامج ضغط مجاني (يلزم تضمين المثبّت).",
-                        "en":  "Free archiver (installer must be bundled)."
-                    }
+    "id": "7zip",
+    "name": {
+        "ar": "7-Zip",
+        "en": "7-Zip"
+    },
+    "category": "performance",
+    "profiles": [],
+    "default": false,
+    "requires_reboot": false,
+    "risk": "low",
+    "actions": [
+        {
+            "type": "installer",
+            "file": "7zip.exe",
+            "args": "/S"
+        }
+    ],
+    "description": {
+        "ar": "برنامج ضغط مجاني (يلزم تضمين المثبّت).",
+        "en": "Free archiver (installer must be bundled)."
+    },
+    "order": 250
 }

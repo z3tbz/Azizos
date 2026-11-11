@@ -14,6 +14,7 @@ pub mod schema;
 pub mod catalog;
 pub mod exec;
 pub mod detect;
+pub mod diagnostic;
 
 #[cfg(all(windows, feature = "native"))]
 pub mod exec_windows;
@@ -23,6 +24,10 @@ pub mod detect_windows;
 pub mod win32;
 #[cfg(all(windows, feature = "native"))]
 pub mod appx;
+#[cfg(all(windows, feature = "native"))]
+pub mod com;
+#[cfg(all(windows, feature = "native"))]
+pub mod cache;
 
 #[cfg(all(windows, feature = "native"))]
 pub use exec_windows::WindowsBackend;

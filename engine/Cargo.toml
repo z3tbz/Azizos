@@ -31,11 +31,13 @@ windows-sys = { version = "0.61.2", optional = true, features = [
   "Win32_System_Diagnostics_ToolHelp", "Win32_Storage_FileSystem", "Win32_System_IO",
   "Win32_System_Ioctl", "Win32_System_Power", "Win32_System_Registry",
   "Win32_Devices_DeviceAndDriverInstallation", "Win32_Devices_Properties",
+  "Win32_UI_WindowsAndMessaging",
 ] }
 # Typed COM/WinRT (PackageManager for appx removal, no PowerShell/process per
 # app) — only pulled in where windows-sys's plain-C bindings aren't enough.
 windows = { version = "0.62.2", optional = true, features = [
   "Management_Deployment", "ApplicationModel", "Win32_System_WinRT",
+  "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant", "Win32_System_TaskScheduler", "Win32_System_SecurityCenter",
 ] }
 windows-future = { version = "0.3.2", optional = true, default-features = false }
 

@@ -1,81 +1,91 @@
 {
-    "id":  "remove-edge",
-    "name":  {
-                 "ar":  "إزالة Microsoft Edge",
-                 "en":  "Remove Microsoft Edge"
-             },
-    "category":  "debloat",
-    "profiles":  [
-
-                 ],
-    "default":  true,
-    "requires_reboot":  false,
-    "risk":  "medium",
-    "actions":  [
-                    {
-                        "type":  "appx",
-                        "name":  "*microsoft.microsoftedge.stable*",
-                        "scope":  "family",
-                        "op":  "remove"
-                    },
-                    {
-                        "type":  "appx",
-                        "name":  "*Microsoft.MicrosoftEdge*",
-                        "scope":  "family",
-                        "op":  "remove"
-                    },
-                    {
-                        "type":  "appx",
-                        "name":  "*Microsoft.Edge*",
-                        "scope":  "family",
-                        "op":  "remove"
-                    },
-                    {
-                        "type":  "appx",
-                        "name":  "*Microsoft.MicrosoftEdgeDevToolsClient*",
-                        "scope":  "family",
-                        "op":  "remove"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "C:\\\\Windows\\\\SystemApps\\\\Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe"
-                    },
-                    {
-                        "type":  "kill",
-                        "name":  "MicrosoftEdgeUpdate"
-                    },
-                    {
-                        "type":  "kill",
-                        "name":  "msedge"
-                    },
-                    {
-                        "type":  "kill",
-                        "name":  "MicrosoftEdge*"
-                    },
-                    {
-                        "type":  "kill",
-                        "name":  "setup"
-                    },
-                    {
-                        "type":  "bundled",
-                        "file":  "EDGE.ps1",
-                        "args":  "-UninstallEdge",
-                        "runas":  "user_elevated"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "%ProgramFiles(x86)%\\\\Microsoft\\\\Edge"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "delete",
-                        "path":  "%ProgramFiles(x86)%\\\\Microsoft\\\\EdgeUpdate"
-                    }
-                ],
-    "description":  {
-                        "ar":  "يحذف Edge. ثبّت متصفح ثاني قبلها.",
-                        "en":  "Removes Edge. Install another browser first."
-                    }
+    "id": "remove-edge",
+    "name": {
+        "ar": "إزالة Microsoft Edge",
+        "en": "Remove Microsoft Edge"
+    },
+    "category": "debloat",
+    "profiles": [],
+    "default": true,
+    "requires_reboot": false,
+    "risk": "medium",
+    "actions": [
+        {
+            "type": "appx",
+            "name": "*microsoft.microsoftedge.stable*",
+            "scope": "family",
+            "op": "remove",
+            "ignore_errors": true
+        },
+        {
+            "type": "appx",
+            "name": "*Microsoft.MicrosoftEdge*",
+            "scope": "family",
+            "op": "remove",
+            "ignore_errors": true
+        },
+        {
+            "type": "appx",
+            "name": "*Microsoft.Edge*",
+            "scope": "family",
+            "op": "remove",
+            "ignore_errors": true
+        },
+        {
+            "type": "appx",
+            "name": "*Microsoft.MicrosoftEdgeDevToolsClient*",
+            "scope": "family",
+            "op": "remove",
+            "ignore_errors": true
+        },
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "C:\\\\Windows\\\\SystemApps\\\\Microsoft.MicrosoftEdgeDevToolsClient_8wekyb3d8bbwe",
+            "ignore_errors": true
+        },
+        {
+            "type": "kill",
+            "name": "MicrosoftEdgeUpdate",
+            "ignore_errors": true
+        },
+        {
+            "type": "kill",
+            "name": "msedge",
+            "ignore_errors": true
+        },
+        {
+            "type": "kill",
+            "name": "MicrosoftEdge*",
+            "ignore_errors": true
+        },
+        {
+            "type": "kill",
+            "name": "setup",
+            "path_contains": "\\Edge",
+            "ignore_errors": true
+        },
+        {
+            "type": "bundled",
+            "file": "EDGE.ps1",
+            "args": "-UninstallEdge -NonInteractive",
+            "runas": "user_elevated",
+            "ignore_errors": true
+        },
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "%ProgramFiles(x86)%\\\\Microsoft\\\\Edge"
+        },
+        {
+            "type": "file",
+            "op": "delete",
+            "path": "%ProgramFiles(x86)%\\\\Microsoft\\\\EdgeUpdate"
+        }
+    ],
+    "description": {
+        "ar": "يحذف Edge. ثبّت متصفح ثاني قبلها.",
+        "en": "Removes Edge. Install another browser first."
+    },
+    "order": 250
 }

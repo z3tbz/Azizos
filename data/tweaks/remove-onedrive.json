@@ -1,54 +1,62 @@
 {
-    "id":  "remove-onedrive",
-    "name":  {
-                 "ar":  "إزالة OneDrive",
-                 "en":  "Remove OneDrive"
-             },
-    "category":  "debloat",
-    "profiles":  [
-
-                 ],
-    "default":  true,
-    "requires_reboot":  true,
-    "risk":  "low",
-    "actions":  [
-                    {
-                        "type":  "appx",
-                        "name":  "*OneDrive*",
-                        "scope":  "family",
-                        "op":  "remove"
-                    },
-                    {
-                        "type":  "kill",
-                        "name":  "OneDriveStandaloneUpdater"
-                    },
-                    {
-                        "type":  "kill",
-                        "name":  "OneDriveSetup"
-                    },
-                    {
-                        "type":  "kill",
-                        "name":  "OneDrive*"
-                    },
-                    {
-                        "type":  "service",
-                        "name":  "OneSyncSvc*",
-                        "op":  "delete"
-                    },
-                    {
-                        "type":  "command",
-                        "exe":  "cmd",
-                        "args":  "/c for %a in (\"SysWOW64\" \"System32\") do (if exist \"%windir%\\%~a\\OneDriveSetup.exe\" (\"%windir%\\%~a\\OneDriveSetup.exe\" /uninstall))"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "delete_key",
-                        "hive":  "hkcu",
-                        "path":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}"
-                    }
-                ],
-    "description":  {
-                        "ar":  "يزيل OneDrive. ملفاتك المحلية تبقى.",
-                        "en":  "Uninstalls OneDrive. Your local files stay."
-                    }
+    "id": "remove-onedrive",
+    "name": {
+        "ar": "إزالة OneDrive",
+        "en": "Remove OneDrive"
+    },
+    "category": "debloat",
+    "profiles": [],
+    "default": true,
+    "requires_reboot": true,
+    "risk": "low",
+    "actions": [
+        {
+            "type": "appx",
+            "name": "*OneDrive*",
+            "scope": "family",
+            "op": "remove",
+            "ignore_errors": true
+        },
+        {
+            "type": "kill",
+            "name": "OneDriveStandaloneUpdater",
+            "ignore_errors": true
+        },
+        {
+            "type": "kill",
+            "name": "OneDriveSetup",
+            "ignore_errors": true
+        },
+        {
+            "type": "kill",
+            "name": "OneDrive*",
+            "ignore_errors": true
+        },
+        {
+            "type": "service",
+            "name": "OneSyncSvc*",
+            "op": "delete"
+        },
+        {
+            "type": "command",
+            "exe": "%windir%\\SysWOW64\\OneDriveSetup.exe",
+            "args": "/uninstall"
+        },
+        {
+            "type": "command",
+            "exe": "%windir%\\System32\\OneDriveSetup.exe",
+            "args": "/uninstall"
+        },
+        {
+            "type": "registry",
+            "op": "delete_key",
+            "hive": "hkcu",
+            "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\{018D5C66-4533-4307-9B53-224DE2ED1FE6}"
+        }
+    ],
+    "description": {
+        "ar": "يزيل OneDrive. ملفاتك المحلية تبقى.",
+        "en": "Uninstalls OneDrive. Your local files stay."
+    },
+    "order": 250
 }

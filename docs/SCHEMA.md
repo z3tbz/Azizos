@@ -7,6 +7,7 @@
 | الحقل | النوع | الوصف |
 |---|---|---|
 | `id` | string | معرّف فريد (kebab-case) |
+| `order` | number | أولوية ترتيب البلاي بوك؛ الافتراضي 0، والتبعيات تتقدّم عليها |
 | `name` | {ar,en} | الاسم المعروض |
 | `description` | {ar,en} | شرح مختصر للمستخدم |
 | `category` | string | تصنيف (appearance/privacy/performance/network/services/debloat/security) |
@@ -34,7 +35,7 @@
 
 ```jsonc
 // registry
-{ "type":"registry", "op":"set|delete|delete_key|take_own",
+{ "type":"registry", "op":"set|delete|delete_key",
   "hive":"HKLM|HKCU|HKCR|HKU", "path":"Software\\...",
   "name":"ValueName", "kind":"dword|qword|sz|expand_sz|multi_sz|binary",
   "data": 0 }
@@ -59,6 +60,9 @@
 // powershell
 { "type":"powershell", "script":"name.ps1", "runas":"user_elevated|trusted_installer" }
 
+// kill: path_contains يمنع قتل عمليات أخرى لها الاسم نفسه
+{ "type":"kill", "name":"setup", "path_contains":"\\Edge" }
+
 // device  (enable/disable by friendly name)
 { "type":"device", "op":"disable|enable", "name":"Microsoft GS Wavetable Synth" }
 
@@ -68,9 +72,26 @@
 // powerplan
 { "type":"powerplan", "import":"Azizos.pow", "guid":"..." }
 
+// power_profile: ترجمة فرعي powerplan.bat الأصليين إلى powrprof
+{ "type":"power_profile", "desktop_import":"Azizos.pow" }
+
 // env  (environment variable)
 { "type":"env", "name":"DOTNET_CLI_TELEMETRY_OPTOUT", "data":"1", "scope":"machine|user" }
 ```
+
+`powerplan.guid` حالياً مؤشر لتفعيل الخطة المستوردة، وليس ضماناً لاستيرادها بنفس المعرف.
+`trusted_installer` قابل للقراءة في البيانات، لكن التنفيذ يرفضه صراحة؛ لا يشغّله بهوية مختلفة بصمت.
+Appx `unregister` أو نطاق غير `family` يتطلب أداة المؤلف عند وجود الهدف؛ لا يتحول لإزالة كاملة.
+مسح الكاش مباشر ويحافظ على SettingsCache.txt. الخدمة ذات wildcard تدعم الحذف/الإيقاف؛ تغيير بدء خدمات متعددة يتطلب إجراءات منفصلة لالتقاط أصولها.
+
+### `ignore_errors` (على أي إجراء)
+
+```jsonc
+{ "type":"kill", "name":"msedge", "ignore_errors": true }
+```
+
+يقابل `ignoreErrors: true` و`errorAction: Ignore` في AME: المؤلف يقول إن فشل هذي الخطوة غير مهم.
+لو فشلت، تُسجَّل في التقرير بسببها ورمزها كـ«غير منطبق» وما تُحسب خطأ. المحوّل يكتبها تلقائياً.
 
 ## أنواع الـ Checks (verify)
 
@@ -82,5 +103,6 @@
 
 ## التراجع (revert)
 
-افتراضياً المحرّك يلتقط القيمة الأصلية قبل التطبيق ويخزّنها في سجل التراجع.
-يمكن تخصيص تراجع يدوي بإضافة `"revert":[ ...actions... ]`.
+يلتقط المحرّك القيم الأصلية المدعومة ويكتبها قبل التطبيق في journal.jsonl، ثم يضيف العكس للتقرير عند نجاح التغيير.
+حقل `revert` يُقرأ من البيانات لكنه لا يُطبَّق تلقائياً. الإجراءات بلا عكس آلي تظهر في without_automatic_restore.
+راجع [حدود الاسترجاع](./AUDIT-2026-11-10.md).

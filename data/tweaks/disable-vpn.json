@@ -1,71 +1,70 @@
 {
-    "id":  "disable-vpn",
-    "name":  {
-                 "ar":  "تعطيل خدمات VPN",
-                 "en":  "Disable VPN Services"
-             },
-    "category":  "devices",
-    "profiles":  [
-
-                 ],
-    "default":  false,
-    "requires_reboot":  true,
-    "risk":  "medium",
-    "actions":  [
-                    {
-                        "type":  "service",
-                        "name":  "SstpSvc",
-                        "op":  "change",
-                        "startup":  "disabled"
-                    },
-                    {
-                        "type":  "service",
-                        "name":  "IKEEXT",
-                        "op":  "change",
-                        "startup":  "disabled"
-                    },
-                    {
-                        "type":  "service",
-                        "name":  "PolicyAgent",
-                        "op":  "change",
-                        "startup":  "disabled"
-                    },
-                    {
-                        "type":  "service",
-                        "name":  "iphlpsvc",
-                        "op":  "change",
-                        "startup":  "disabled"
-                    },
-                    {
-                        "type":  "service",
-                        "name":  "NdisVirtualBus",
-                        "op":  "change",
-                        "startup":  "disabled"
-                    },
-                    {
-                        "type":  "service",
-                        "name":  "RasMan",
-                        "op":  "change",
-                        "startup":  "disabled"
-                    },
-                    {
-                        "type":  "service",
-                        "name":  "WinHttpAutoProxySvc",
-                        "op":  "change",
-                        "startup":  "disabled"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "SOFTWARE\\Azizos",
-                        "name":  "DisableVPN",
-                        "kind":  "dword",
-                        "data":  1
-                    }
-                ],
-    "description":  {
-                        "ar":  "الـVPN المدمج يتوقف. لا تختاره إذا تستخدم VPN.",
-                        "en":  "Built-in VPN stops working. Skip it if you use a VPN."
-                    }
+    "id": "disable-vpn",
+    "name": {
+        "ar": "تعطيل خدمات VPN",
+        "en": "Disable VPN Services"
+    },
+    "category": "devices",
+    "profiles": [],
+    "default": false,
+    "requires_reboot": true,
+    "risk": "medium",
+    "actions": [
+        {
+            "type": "service",
+            "name": "SstpSvc",
+            "op": "change",
+            "startup": "disabled"
+        },
+        {
+            "type": "service",
+            "name": "IKEEXT",
+            "op": "change",
+            "startup": "disabled"
+        },
+        {
+            "type": "service",
+            "name": "PolicyAgent",
+            "op": "change",
+            "startup": "disabled"
+        },
+        {
+            "type": "service",
+            "name": "iphlpsvc",
+            "op": "change",
+            "startup": "disabled"
+        },
+        {
+            "type": "service",
+            "name": "NdisVirtualBus",
+            "op": "change",
+            "startup": "disabled"
+        },
+        {
+            "type": "service",
+            "name": "RasMan",
+            "op": "change",
+            "startup": "disabled"
+        },
+        {
+            "type": "service",
+            "name": "WinHttpAutoProxySvc",
+            "op": "change",
+            "startup": "disabled"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "SOFTWARE\\Azizos",
+            "name": "DisableVPN",
+            "kind": "dword",
+            "data": 1
+        }
+    ],
+    "description": {
+        "ar": "الـVPN المدمج يتوقف. لا تختاره إذا تستخدم VPN.",
+        "en": "Built-in VPN stops working. Skip it if you use a VPN."
+    },
+    "order": 250
 }

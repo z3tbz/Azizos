@@ -1,7 +1,9 @@
+> الحالة المحدثة والحدود في [التدقيق الفعلي](./AUDIT-2026-11-10.md). القيم المدعومة تُحفظ في journal.jsonl قبل التنفيذ؛ ليست كل الإجراءات قابلة للاسترجاع.
+
 # المحرّك (Executor)
 
 المنطق كله في [`engine/src/exec.rs`](../engine/src/exec.rs): **Rust نقي ومُختبَر** يشتغل ويُختبر على أي نظام.
-كل لمسة لويندوز خلف واجهة واحدة `Backend` (ثلاث دوال)، والتنفيذ الحقيقي في
+كل لمسة لويندوز خلف واجهة واحدة `Backend`، والتنفيذ الحقيقي في
 [`exec_windows.rs`](../engine/src/exec_windows.rs) و[`win32.rs`](../engine/src/win32.rs) (ميزة `native`).
 
 ```text
@@ -19,7 +21,7 @@ UI (ui/app.js) ──invoke──► app/src/main.rs ──► exec::run_phase_o
 | `Applied` / `Verified` | تغيّر شيء فعلاً (وتأكّد بالقراءة إن وُجد `verify`) | لا |
 | `AlreadyApplied` | القيمة مطابقة أصلاً، المفتاح/الملف محذوف أصلاً، الخدمة متوقفة، المهمة معطّلة، التطبيق غير مثبّت | لا |
 | `NotApplicable` | العنصر غير موجود في نسخة ويندوز هذي (خدمة/مهمة/ملف/عملية) | لا |
-| `Failed` | رفض حقيقي من ويندوز، مع **رمز الخطأ** (مثل `exit code 5 (0x00000005) Access is denied`) | **نعم** |
+| `Failed` | رفض من ويندوز برمزه، أو إجراء غير مدعوم، أو إخفاق حفظ الأصل | **نعم** |
 | `Skipped` | وضع المعاينة (dry-run) أو تويك غير متوافق مع النسخة | لا |
 
 `Report::failures()` يرجّع **الأخطاء الفعلية فقط**؛ الواجهة والتقرير يعرضون الأربع أرقام منفصلة.
@@ -27,11 +29,10 @@ UI (ui/app.js) ──invoke──► app/src/main.rs ──► exec::run_phase_o
 ## 2. المتانة
 
 - **عزل كامل:** كل إجراء داخل `catch_unwind`؛ خطأ أو حتى panic في إجراء = سطر في التقرير والباقي يكمل.
-- **اللقطة قبل التغيير:** `snapshot()` تقرأ القيمة الأصلية (النوع + البيانات بالضبط) قبل الكتابة، وتُحفظ في `report.json`
-  كإجراء عكسي (`revert`) — تُحفظ فقط لما يتغيّر شيء فعلاً.
+- **اللقطة قبل التغيير:** `try_snapshot()` تقرأ الأصل المدعوم، و`persist_snapshot()` يكتبه مع sync_all إلى journal.jsonl قبل التطبيق. يُضاف العكس إلى report.json عند نجاح التغيير. فقدان صلاحية القراءة أو امتلاء القرص يمنع ذلك الإجراء.
 - **قراءة خفيفة ومباشرة:** اللقطة والفحص المسبق = استدعاء `RegQueryValueExW` داخل العملية نفسها (ميكروثواني)، بدون أي عملية خارجية.
 - **مرحلتان:** الفوري أولاً، ثم ما يحتاج إعادة تشغيل (خدمات/BCD) آخر شي.
-- **إعادة التشغيل مرتين آمنة (idempotent):** التشغيل الثاني يطلع كله «مطبّق مسبقاً».
+- **التكرار:** القيم المطابقة تُكتشف مباشرة؛ السكربتات والمثبّتات وبعض تغييرات الطاقة قد تعمل مجدداً. لا نضمن أن كل شيء يظهر «مطبّق مسبقاً».
 
 ## 3. أخف طبقة لكل نوع
 
@@ -43,14 +44,15 @@ UI (ui/app.js) ──invoke──► app/src/main.rs ──► exec::run_phase_o
 | `kill` | Toolhelp: `CreateToolhelp32Snapshot` + `TerminateProcess` | بدون `taskkill.exe`؛ يتجاهل عمليته هو والـ PID 0 |
 | `file` delete/rename/copy | `std::fs` | داخل العملية |
 | `env` | ريجستري `Environment` (machine/user) | نفس مصدر ويندوز |
-| `scheduled_task` | فحص مسبق من `System32\Tasks\…` (XML) ثم `schtasks.exe` فقط إذا يلزم | غالباً بدون عملية إطلاقاً |
-| `appx` | فحص مسبق من الريجستري (`PackageRepository` + `AppxAllUserStore`) ثم PowerShell فقط للموجود | تطبيق غير مثبّت = صفر عمليات |
-| `bcd` | `bcdedit.exe` | ما فيه API عام أخف (BCD WMI أثقل) |
-| `powerplan` | `powercfg.exe` | (مخطّط: `PowerWriteACValueIndex` من powrprof — انظر الخطة) |
+| `scheduled_task` | COM ITaskService | مباشر؛ الأداة التنفيذية الحالية لم تُحوّل بعد |
+| `appx` | WinRT PackageManager لكل المستخدمين | بدون PowerShell؛ unregister وبعض النطاقات تحتاج الأداة الأصلية |
+| `bcd` | `bcdedit.exe` | بقيت الأداة الأصلية؛ لم ننفّذ بديل WMI |
+| `powerplan` / `power_profile` | powrprof | import / activate / AC / DC |
+| `device` | SetupAPI | 18 إجراء من سكربت المؤلف أصبحت مباشرة |
 | `command` / `bundled` / `installer` | عملية فرعية | سكربتات البلاي بوك نفسها |
 
 **قواعد أي عملية فرعية (كلها في `WindowsBackend::proc`):**
-- `CREATE_NO_WINDOW` → **ما تطلع أي نافذة سوداء**.
+- `CREATE_NO_WINDOW` يمنع نافذة Console للعملية المباشرة؛ السكربتات قد تنشئ أبناءً بواجهات مستقلة، لذلك لا يوجد ضمان لكل برنامج خارجي.
 - أداة النظام تُحلّ لمسارها الكامل في `%SystemRoot%\System32` (`sys_tool`) — ما نبحث في PATH، فما أحد يقدر يزرع `bcdedit.exe` مزيّف.
 - `System32` أول الـ PATH للعمليات الفرعية، ومجلد العمل = مجلد الأصول.
 - PowerShell عبر `-EncodedCommand` (UTF-16 base64) → بدون مشاكل اقتباس أو ترميز عربي.

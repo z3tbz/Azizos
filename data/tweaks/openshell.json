@@ -1,258 +1,275 @@
 {
-    "id":  "openshell",
-    "name":  {
-                 "ar":  "تثبيت Open-Shell",
-                 "en":  "Install Open-Shell"
-             },
-    "category":  "appearance",
-    "profiles":  [
-
-                 ],
-    "default":  false,
-    "requires_reboot":  false,
-    "risk":  "low",
-    "actions":  [
-                    {
-                        "type":  "file",
-                        "op":  "rename",
-                        "path":  "%WINDIR%\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.exe",
-                        "to":  "%WINDIR%\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.old"
-                    },
-                    {
-                        "type":  "file",
-                        "op":  "rename",
-                        "path":  "%WINDIR%\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\SearchHost.exe",
-                        "to":  "%WINDIR%\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\SearchHost.old"
-                    },
-                    {
-                        "type":  "command",
-                        "exe":  "cmd",
-                        "args":  "/c OpenShell.exe /qn ADDLOCAL=StartMenu"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\ClassicExplorer",
-                        "name":  "ShowedToolbar",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\ClassicExplorer",
-                        "name":  "CSettingsDlg",
-                        "kind":  "binary",
-                        "data":  "a8030000cc0100000000000000000000aa0f00000100e30100000000"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\OpenShell",
-                        "name":  "LastUpdateTime",
-                        "kind":  "dword",
-                        "data":  372860149
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu",
-                        "name":  "ShowedStyle2",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu",
-                        "name":  "CSettingsDlg",
-                        "kind":  "binary",
-                        "data":  "a80300008e0100000000000000000000730c00000000000000000000"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "Version",
-                        "kind":  "dword",
-                        "data":  67371206
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "ShiftClick",
-                        "kind":  "sz",
-                        "data":  "ClassicMenu"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "ShiftWin",
-                        "kind":  "sz",
-                        "data":  "ClassicMenu"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "CheckWinUpdates",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "PreCacheIcons",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "EnableAccelerators",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "SearchTrack",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "SearchInternet",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "MainMenuAnimate",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "FontSmoothing",
-                        "kind":  "sz",
-                        "data":  "None"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "GlassOverride",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "GlassColor",
-                        "kind":  "dword",
-                        "data":  3680294
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "SkinW7",
-                        "kind":  "sz",
-                        "data":  "Immersive"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "SkinVariationW7",
-                        "kind":  "sz",
-                        "data":  ""
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "CustomTaskbar",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "TaskbarLook",
-                        "kind":  "sz",
-                        "data":  "Opaque"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "TaskbarColor",
-                        "kind":  "dword",
-                        "data":  3680294
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\OpenShell\\StartMenu\\Settings",
-                        "name":  "SkipMetro",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
-                        "name":  "TaskbarAl",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "command",
-                        "exe":  "cmd",
-                        "args":  "/c openshell.bat"
-                    }
-                ],
-    "description":  {
-                        "ar":  "قائمة ابدأ كلاسيكية (يلزم تضمين المثبّت).",
-                        "en":  "Classic Start menu (installer must be bundled)."
-                    }
+    "id": "openshell",
+    "name": {
+        "ar": "تثبيت Open-Shell",
+        "en": "Install Open-Shell"
+    },
+    "category": "appearance",
+    "profiles": [],
+    "default": false,
+    "requires_reboot": false,
+    "risk": "low",
+    "actions": [
+        {
+            "type": "file",
+            "op": "rename",
+            "path": "%WINDIR%\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.exe",
+            "to": "%WINDIR%\\SystemApps\\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\\StartMenuExperienceHost.old"
+        },
+        {
+            "type": "file",
+            "op": "rename",
+            "path": "%WINDIR%\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\SearchHost.exe",
+            "to": "%WINDIR%\\SystemApps\\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\\SearchHost.old"
+        },
+        {
+            "type": "installer",
+            "file": "OpenShell.exe",
+            "args": "/qn ADDLOCAL=StartMenu"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\ClassicExplorer",
+            "name": "ShowedToolbar",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\ClassicExplorer",
+            "name": "CSettingsDlg",
+            "kind": "binary",
+            "data": "a8030000cc0100000000000000000000aa0f00000100e30100000000"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\OpenShell",
+            "name": "LastUpdateTime",
+            "kind": "dword",
+            "data": 372860149
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu",
+            "name": "ShowedStyle2",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu",
+            "name": "CSettingsDlg",
+            "kind": "binary",
+            "data": "a80300008e0100000000000000000000730c00000000000000000000"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "Version",
+            "kind": "dword",
+            "data": 67371206
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "ShiftClick",
+            "kind": "sz",
+            "data": "ClassicMenu"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "ShiftWin",
+            "kind": "sz",
+            "data": "ClassicMenu"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "CheckWinUpdates",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "PreCacheIcons",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "EnableAccelerators",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "SearchTrack",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "SearchInternet",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "MainMenuAnimate",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "FontSmoothing",
+            "kind": "sz",
+            "data": "None"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "GlassOverride",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "GlassColor",
+            "kind": "dword",
+            "data": 3680294
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "SkinW7",
+            "kind": "sz",
+            "data": "Immersive"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "SkinVariationW7",
+            "kind": "sz",
+            "data": ""
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "CustomTaskbar",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "TaskbarLook",
+            "kind": "sz",
+            "data": "Opaque"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "TaskbarColor",
+            "kind": "dword",
+            "data": 3680294
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "SkipMetro",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+            "name": "TaskbarAl",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\OpenShell\\StartMenu\\Settings",
+            "name": "SkinOptionsW7",
+            "kind": "multi_sz",
+            "data": [
+                "LIGHT=0",
+                "DARK=0",
+                "AUTO=1",
+                "USER_IMAGE=1",
+                "USER_NAME=0",
+                "CENTER_NAME=0",
+                "SMALL_ICONS=0",
+                "OPAQUE=1",
+                "DISABLE_MASK=0",
+                "BLACK_TEXT=0",
+                "BLACK_FRAMES=0",
+                "TRANSPARENT_LESS=1",
+                "TRANSPARENT_MORE=0"
+            ]
+        }
+    ],
+    "description": {
+        "ar": "قائمة ابدأ كلاسيكية (يلزم تضمين المثبّت).",
+        "en": "Classic Start menu (installer must be bundled)."
+    },
+    "order": 250
 }

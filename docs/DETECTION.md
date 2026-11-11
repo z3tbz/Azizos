@@ -21,7 +21,7 @@
 |---|---|---|
 | `SupportedBuild` | 19044 ≤ build ≤ 26300 | لا يوجد إصلاح تلقائي |
 | `DefenderToggled` | ريجستري `Real-Time Protection\DisableRealtimeMonitoring` (الإعداد + السياسة) | «عالجها تلقائياً» = موافقة صريحة ثم تشغيل **سكربتك أنت** المربوط في `data/preflight.json`؛ أو «أسوّيها بنفسي» = فتح Windows Security ثم إعادة الفحص |
-| `NoThirdPartyAv` | WMI `root/SecurityCenter2 → AntiVirusProduct` (استدعاء PowerShell مخفي واحد، ما فيه واجهة أخف) | إرشاد فقط + إعادة فحص |
+| `NoThirdPartyAv` | COM `IWSCProductList` مباشرة؛ إخفاق القراءة يعني تعذّر التحقق | إرشاد فقط + إعادة فحص |
 | `PluggedIn` | `GetSystemPowerStatus.ACLineStatus`؛ المكتبي = غير منطبق | إرشاد + إعادة فحص |
 
 ## حدود ثابتة

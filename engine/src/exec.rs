@@ -40,6 +40,16 @@ pub trait Backend {
     /// The inverse of `action`, read from the system *before* it runs, so a
     /// rollback can restore the exact original. `None` when nothing to restore.
     fn snapshot(&mut self, action: &Action) -> Option<Action>;
+
+    /// Native backends distinguish an absent value from an unreadable value.
+    fn try_snapshot(&mut self, action: &Action) -> Result<Option<Action>, String> {
+        Ok(self.snapshot(action))
+    }
+
+    /// Flush the original state to durable storage BEFORE the action runs.
+    fn persist_snapshot(&mut self, _action: &Action, _inverse: Option<&Action>) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -66,6 +76,8 @@ pub struct TweakOutcome {
     pub actions: Vec<ActionOutcome>,
     /// Inverse actions captured before applying, newest first (for rollback).
     pub revert: Vec<Action>,
+    /// Actions without an automatic inverse (scripts, removals, etc.).
+    pub without_automatic_restore: Vec<usize>,
 }
 
 impl TweakOutcome {
@@ -91,6 +103,13 @@ pub struct Report {
 }
 
 impl Report {
+    pub fn diagnostics(&self) -> Vec<(String, usize, crate::diagnostic::Diagnostic)> {
+        self.failures().into_iter().map(|(id, index, message)| {
+            let stage = if index == usize::MAX { "verify" } else { "apply" };
+            (id, index, crate::diagnostic::classify(stage, &message))
+        }).collect()
+    }
+
     pub fn counts(&self) -> Counts {
         let mut c = Counts { skipped: self.skipped_incompatible.len(), ..Counts::default() };
         for a in self.tweaks.iter().flat_map(|t| &t.actions) {
@@ -164,7 +183,7 @@ fn panic_text(p: Box<dyn std::any::Any + Send>) -> String {
 }
 
 fn apply_tweak<B: Backend>(tweak: &Tweak, backend: &mut B, dry_run: bool) -> TweakOutcome {
-    let mut outcome = TweakOutcome { id: tweak.id.clone(), actions: Vec::new(), revert: Vec::new() };
+    let mut outcome = TweakOutcome { id: tweak.id.clone(), actions: Vec::new(), revert: Vec::new(), without_automatic_restore: Vec::new() };
 
     for (i, action) in tweak.actions.iter().enumerate() {
         if dry_run {
@@ -173,8 +192,18 @@ fn apply_tweak<B: Backend>(tweak: &Tweak, backend: &mut B, dry_run: bool) -> Twe
         }
 
         // Original state first (newest first, so a rollback unwinds in order).
-        let snap = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| backend.snapshot(action)))
-            .unwrap_or(None);
+        let snap = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let inverse = backend.try_snapshot(action)?;
+            backend.persist_snapshot(action, inverse.as_ref())?;
+            Ok::<_, String>(inverse)
+        })).unwrap_or_else(|p| Err(format!("snapshot panic: {}", panic_text(p))));
+        let snap = match snap {
+            Ok(s) => s,
+            Err(e) => {
+                outcome.actions.push(ActionOutcome { index: i, status: Status::Failed, detail: Some(format!("original state could not be saved: {e}")) });
+                continue;
+            }
+        };
 
         // A panic inside one action (a bug — never expected) becomes its error.
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| backend.apply(action)))
@@ -185,11 +214,17 @@ fn apply_tweak<B: Backend>(tweak: &Tweak, backend: &mut B, dry_run: bool) -> Twe
                 // keep the inverse only for changes we actually made
                 if let Some(inv) = snap {
                     outcome.revert.insert(0, inv);
+                } else {
+                    outcome.without_automatic_restore.push(i);
                 }
                 (Status::Applied, None)
             }
             Ok(Applied::Already(why)) => (Status::AlreadyApplied, Some(why)),
             Ok(Applied::NotApplicable(why)) => (Status::NotApplicable, Some(why)),
+            // The playbook marked this step optional: keep the reason, don't call it an error.
+            Err(e) if tweak.ignore_errors.contains(&i) => {
+                (Status::NotApplicable, Some(format!("optional step (playbook ignores its errors): {e}")))
+            }
             Err(e) => (Status::Failed, Some(e)),
         };
         outcome.actions.push(ActionOutcome { index: i, status, detail });
@@ -198,7 +233,8 @@ fn apply_tweak<B: Backend>(tweak: &Tweak, backend: &mut B, dry_run: bool) -> Twe
     // Post-apply verification: a passing probe upgrades, a failing one is an error.
     if !dry_run {
         for check in &tweak.verify {
-            match backend.verify(check) {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| backend.verify(check)))
+                .unwrap_or_else(|p| Err(format!("internal error: {}", panic_text(p)))) {
                 Ok(true) => {
                     if let Some(last) = outcome.actions.iter_mut().rev().find(|a| a.status == Status::Applied) {
                         last.status = Status::Verified;
@@ -281,6 +317,36 @@ mod tests {
         let mut be = MockBackend::default();
         let r = run_phase(cat, &plan, Phase::Immediate, &mut be, false);
         (r, be)
+    }
+
+    #[test]
+    fn journal_failure_blocks_the_write_and_does_not_stop_later_actions() {
+        struct FailingJournal(MockBackend);
+        impl Backend for FailingJournal {
+            fn apply(&mut self, a: &Action) -> Result<Applied, String> { self.0.apply(a) }
+            fn snapshot(&mut self, a: &Action) -> Option<Action> { Some(a.clone()) }
+            fn verify(&mut self, _: &Check) -> Result<bool, String> { Ok(true) }
+            fn persist_snapshot(&mut self, a: &Action, _: Option<&Action>) -> Result<(), String> {
+                if serde_json::to_string(a).unwrap().contains("blocked") { Err("disk full (112)".into()) } else { Ok(()) }
+            }
+        }
+        let mut backend = FailingJournal(MockBackend::default());
+        let report = apply_tweak(&tweak("t", &["blocked", "good"]), &mut backend, false);
+        assert_eq!(backend.0.applied.len(), 1);
+        assert_eq!(report.actions[0].status, Status::Failed);
+        assert_eq!(report.actions[1].status, Status::Applied);
+        assert!(report.actions[0].detail.as_ref().unwrap().contains("disk full"));
+    }
+
+    #[test]
+    fn a_step_the_playbook_marks_optional_is_not_an_error() {
+        let mut t = tweak("t", &["good", "boom", "boom2"]);
+        t.ignore_errors = vec![1];
+        let report = apply_tweak(&t, &mut MockBackend::default(), false);
+        // same failure, two outcomes: only the one NOT marked optional counts
+        assert_eq!(report.actions[1].status, Status::NotApplicable);
+        assert!(report.actions[1].detail.as_ref().unwrap().contains("0x80070005"));
+        assert_eq!(report.actions[2].status, Status::Failed);
     }
 
     #[test]

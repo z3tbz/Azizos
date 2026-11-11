@@ -233,6 +233,9 @@ pub enum Action {
     /// optional). Done in-process through the Toolhelp API — no taskkill.exe.
     Kill {
         name: String,
+        /// Restrict matching processes by their full executable path.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        path_contains: Option<String>,
     },
     Bcd {
         args: String,
@@ -241,6 +244,10 @@ pub enum Action {
         import: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         guid: Option<String>,
+    },
+    /// Equivalent of the author's powerplan.bat, using powrprof in-process.
+    PowerProfile {
+        desktop_import: String,
     },
     /// Run a script/executable shipped *inside* the app (embedded asset), not a
     /// system tool. The executor picks the interpreter from the extension
@@ -291,6 +298,7 @@ impl Action {
             self,
             Action::Bcd { .. }
                 | Action::Powerplan { .. }
+                | Action::PowerProfile { .. }
                 | Action::Device { .. }
                 | Action::Powershell { .. }
                 | Action::Bundled { .. }
@@ -323,6 +331,9 @@ pub enum Check {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tweak {
     pub id: String,
+    /// Source playbook order, used as the stable topological-sort priority.
+    #[serde(default)]
+    pub order: u32,
     pub name: Localized,
     #[serde(default)]
     pub description: Option<Localized>,
@@ -342,6 +353,13 @@ pub struct Tweak {
     #[serde(default)]
     pub conflicts_with: Vec<String>,
     pub actions: Vec<Action>,
+    /// Indexes into `actions` whose failure the playbook itself declared
+    /// harmless (AME's `ignoreErrors: true` / `errorAction: Ignore`). Written
+    /// per action in the JSON (`"ignore_errors": true`); the catalog loader
+    /// collects them here. Such a failure is recorded with its reason but is
+    /// not counted as an error.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ignore_errors: Vec<usize>,
     #[serde(default)]
     pub verify: Vec<Check>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

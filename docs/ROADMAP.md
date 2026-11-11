@@ -1,27 +1,11 @@
 # خطة التطوير والاقتراحات
 
-## الحالة الآن (نوفمبر 2026)
-
-| الجزء | الحالة |
-|---|---|
-| المحرّك (schema/catalog/exec/detect) | ✅ مكتمل ومختبَر |
-| طبقة ويندوز (registry/SCM/Toolhelp/IOCTL/powrprof/SetupAPI/WinRT) | ✅ **33 اختبار حقيقي ناجح على هذا الجهاز** (ليس فحص أنواع فقط) — registry/SSD/GPU/power/appx كلها تُقرأ فعلياً |
-| appx عبر WinRT `PackageManager` | ✅ `engine/src/appx.rs` — صفر PowerShell، صفر عمليات فرعية |
-| الطاقة عبر `powrprof.dll` | ✅ `PowerImportPowerScheme`/`PowerSetActiveScheme` مباشرة |
-| الأجهزة عبر SetupAPI | ✅ `DIF_PROPERTYCHANGE` مباشرة (نفس ما يسويه Device Manager) |
-| المهام المجدولة عبر COM (`ITaskService`) | ⏳ مؤجّل — ولا تويك حالي يستخدم `scheduled_task` (التعطيل الحالي عبر الريجستري/appx)، فأجّلناه لما يصير له استخدام فعلي |
-| حالات صادقة (طُبّق/مطبّق مسبقاً/غير منطبق/خطأ) | ✅ في المحرّك والتقرير والواجهة |
-| الواجهة | ✅ تصميم بأسلوب AME بهوية AZIZ |
-| التويكات | ✅ 25 تويك / 883 إجراء |
-| تثبيت .exe حقيقي (Tauri + NSIS) | ✅ **تم فعلياً على هذا الجهاز** — `target\release\azizos-app.exe` (~48MB) و`target\release\bundle\nsis\Azizos_0.0.5_x64-setup.exe` |
-| أصول المثبّتات الثلاثة | ✅ محمّلة ومدمجة (`scripts/fetch-vendor-assets.ps1`) |
-| دمج الأصول في الـ exe | ✅ **مُصلَح**: كان يدمج كل مجلد assets (٦٢ ميقا بلا داعٍ، فيها ملفات .sys وتنفيذيات ما يستخدمها أي تويك)؛ الآن `build.rs` يدمج فقط ما يفتحه تويك فعلياً بالاسم |
-| الإصلاح التلقائي للمتطلّبات | ⏸️ مؤجّل بطلبك — الربط مع `DisableDefender.ps1` جاهز لما تقول |
+الحالة الحالية في [التدقيق الفعلي](./AUDIT-2026-11-10.md).
 
 ## المرحلة 1 — قبل أول إصدار عام
 
 1. ~~تثبيت MSVC Build Tools~~ ✅ كان موجود أصلاً على الجهاز (Visual Studio Community).
-2. **تجربة على VM لكل نسخة**: 10 22H2 Home · 11 23H2 Pro · 11 24H2 LTSC/IoT · بناء 26xxx. المطلوب: صفر «خطأ» على نظام نظيف، وكله «مطبّق مسبقاً» في التشغيل الثاني.
+2. **تجربة على VM لكل نسخة**: 10 22H2 Home · 11 23H2 Pro · 11 24H2 LTSC/IoT · بناء 26xxx. المطلوب: صفر «خطأ» على نظام نظيف، والتحقق من سلوك التكرار في التشغيل الثاني.
 3. **توقيع رقمي** (Authenticode، ويفضّل EV أو Azure Trusted Signing) — يقلّل إنذارات SmartScreen ويكشف أي نسخة معدّلة.
 
 ## المرحلة 2 — طبقات أخف (بدون عمليات خارجية)
@@ -30,17 +14,17 @@
 |---|---|---|
 | `powercfg.exe` | `powrprof.dll`: `PowerImportPowerScheme` + `PowerSetActiveScheme` | ✅ تم |
 | `Disable-PnpDevice` (PowerShell) | SetupAPI `SetupDiSetClassInstallParams` + `DIF_PROPERTYCHANGE` | ✅ تم |
-| `Remove-AppxPackage` (PowerShell) | WinRT `PackageManager.RemovePackageAsync` + `DeprovisionPackageForAllUsersAsync` | ✅ تم |
-| `schtasks.exe` | COM `ITaskService` (`TaskScheduler`) | ⏳ مؤجّل (لا استخدام حالي) |
+| `Remove-AppxPackage` (PowerShell) | WinRT `PackageManager.RemovePackageWithOptionsAsync` + `DeprovisionPackageForAllUsersAsync` | ✅ تم |
+| `schtasks.exe` | COM `ITaskService` (`TaskScheduler`) | الدوال موجودة ومختبرة قراءةً؛ تحويل الأداة الحالية لم يُنجز |
 | الشبكة (`netsh`, سكربتات) | ريجستري `Tcpip\Parameters\Interfaces\{GUID}` + IP Helper API (`GetAdaptersAddresses`) | لم يُبدأ |
 | NVIDIA | مفاتيح فئة الدرايفر للقيم المعروفة؛ البروفايل عبر NVAPI DRS | لم يُبدأ |
 | `bcdedit.exe` | **يبقى** — واجهة BCD WMI أثقل وأقل وضوحاً | — |
-| `fsutil`/`label`/`DISM` | `SetVolumeLabelW`؛ DISM API (`dismapi.dll`) | لم يُبدأ |
+| `fsutil`/`label`/`DISM` | ريجستري / SetVolumeLabelW / DISM API | أول اثنين مباشران للإجراءات الحالية؛ DISM ما زال أداة خارجية |
 
 ## المرحلة 3 — مزايا
 
 1. **زر «استرجاع»**: يقرأ `report.json` ويطبّق إجراءات `revert` (موجودة في المحرّك: `exec::rollback`) — يحتاج شاشة صغيرة فقط.
-2. **معاينة (Dry-run) في الواجهة**: المحرّك يدعمها؛ زر «معاينة» يعرض كم إجراء بيكون «مطبّق مسبقاً» قبل التطبيق.
+2. **معاينة (Dry-run) في الواجهة**: نُفّذ زر المعاينة؛ صلاحيات الكتابة ونتائج السكربتات تتأكد وقت التطبيق.
 3. **نقطة استعادة** اختيارية قبل التطبيق (`SRSetRestorePointW`).
 4. **تجميع الإجراءات المستقلة بالتوازي** (الريجستري) — المحرّك يعرف `is_serial()`.
 5. **بروفايلات**: «متوازن/ألعاب» موجودة؛ إضافة «لابتوب» يتجنّب تويكات الطاقة.
@@ -49,7 +33,7 @@
 
 > الصراحة أولاً: أي ملف يوصل جهاز المستخدم يمكن تفكيكه نظرياً. الهدف إن التعديل **ينكشف** والانتحال **ما يستاهل**.
 
-1. **المستودع العام يناقض «صعب التسريب»** — الكود والتويكات مقروءة لأي أحد الآن. الأفضل: مستودع خاص، وتنشر الـ exe الموقّع فقط (GitHub Releases في مستودع عام منفصل فيه README وروابط التحقق).
+1. **المستودع يبقى عاماً** حسب رغبتك. التوقيع وSHA-256 يثبتان مصدر الملف ولا يمنعان نسخ الكود.
 2. **كل شيء مدمج داخل الـ exe** (موجود): ما فيه `.apbx` ولا مجلد تويكات يطلع للناس.
 3. **توقيع رقمي** + نشر **SHA-256** للإصدار في صفحة رسمية؛ أي نسخة معدّلة ينكسر توقيعها.
 4. بناء Release: `strip` + LTO + `opt-level="s"` (موجود) — ما فيه رموز ولا مسارات بناء.

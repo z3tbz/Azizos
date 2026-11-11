@@ -1,38 +1,37 @@
 {
-    "id":  "legacy-context-menu",
-    "name":  {
-                 "ar":  "قائمة السياق الكلاسيكية",
-                 "en":  "Legacy Context Menu (Win11)"
-             },
-    "category":  "appearance",
-    "profiles":  [
-
-                 ],
-    "default":  false,
-    "requires_reboot":  false,
-    "risk":  "low",
-    "actions":  [
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hkcu",
-                        "path":  "Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32",
-                        "name":  "",
-                        "kind":  "sz",
-                        "data":  ""
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Azizos",
-                        "name":  "ContextMenu",
-                        "kind":  "dword",
-                        "data":  1
-                    }
-                ],
-    "description":  {
-                        "ar":  "قائمة الزر الأيمن كاملة بدون «عرض خيارات إضافية».",
-                        "en":  "Full right-click menu without “Show more options”."
-                    }
+    "id": "legacy-context-menu",
+    "name": {
+        "ar": "قائمة السياق الكلاسيكية",
+        "en": "Legacy Context Menu (Win11)"
+    },
+    "category": "appearance",
+    "profiles": [],
+    "default": false,
+    "requires_reboot": false,
+    "risk": "low",
+    "actions": [
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hkcu",
+            "path": "Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32",
+            "name": "",
+            "kind": "sz",
+            "data": ""
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Azizos",
+            "name": "ContextMenu",
+            "kind": "dword",
+            "data": 1
+        }
+    ],
+    "description": {
+        "ar": "قائمة الزر الأيمن كاملة بدون «عرض خيارات إضافية».",
+        "en": "Full right-click menu without “Show more options”."
+    },
+    "order": 250
 }

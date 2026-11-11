@@ -1,16 +1,13 @@
 //! Build script: embeds everything Azizos needs into the one .exe.
 //!   * data/tweaks/*.json  -> TWEAKS  (the catalog the engine runs)
 //!   * data/preflight.json -> PREFLIGHT (which bundled file fixes a requirement)
-//!   * assets/**           -> ASSETS  (only the files a tweak or preflight fix
-//!                            actually opens — see `referenced_assets` below)
+//!   * assets/**           -> ASSETS (including scripts' sibling dependencies)
 //!   * azizos.manifest     -> requireAdministrator + Common-Controls v6 + DPI aware
 //! Nothing is read from disk at run time, so there is no .apbx-style package to
 //! pull apart — the app is the playbook.
 //!
-//! `assets/` on disk is allowed to hold more than the catalog uses (e.g. raw
-//! material kept around for a future tweak); only files a tweak JSON or
-//! preflight.json actually names get `include_bytes!`'d into the binary, so
-//! the exe never carries dead weight or unaccountable executables.
+//! Required transitive dependencies live in data/assets-required.json.
+//! A missing dependency fails the build, before a broken executable ships.
 
 use serde_json::Value;
 use std::collections::BTreeSet;
@@ -66,6 +63,14 @@ fn referenced_assets(tweak_docs: &[String], preflight_json: &str) -> BTreeSet<St
                         refs.insert(f.to_string());
                     }
                 }
+                Some("power_profile") => {
+                    if let Some(f) = a.get("desktop_import").and_then(Value::as_str) { refs.insert(f.to_string()); }
+                }
+                Some("file") if a.get("op").and_then(Value::as_str) == Some("copy") => {
+                    if let Some(f) = a.get("path").and_then(Value::as_str) {
+                        if !f.contains('%') && !Path::new(f).is_absolute() { refs.insert(f.replace('\\', "/")); }
+                    }
+                }
                 Some("command") => {
                     let exe = a.get("exe").and_then(Value::as_str).unwrap_or("");
                     if exe.eq_ignore_ascii_case("cmd") || exe.eq_ignore_ascii_case("cmd.exe") {
@@ -113,7 +118,8 @@ fn main() {
     let mut tweaks = Vec::new();
     walk(&data.join("tweaks"), &mut tweaks);
     tweaks.retain(|p| p.extension().map(|e| e == "json").unwrap_or(false));
-    let tweak_docs: Vec<String> = tweaks.iter().map(|p| std::fs::read_to_string(p).unwrap_or_default()).collect();
+    let tweak_docs: Vec<String> = tweaks.iter().map(|p| std::fs::read_to_string(p).expect("read tweak JSON")).collect();
+    azizos_engine::Catalog::from_json_docs(tweak_docs.clone()).expect("invalid embedded catalog");
     src.push_str("pub const TWEAKS: &[&str] = &[\n");
     for p in &tweaks {
         writeln!(src, "    include_str!(r#\"{}\"#),", p.display()).unwrap();
@@ -129,20 +135,33 @@ fn main() {
         src.push_str("pub const PREFLIGHT: &str = \"{}\";\n");
     }
 
-    // Assets: only what a tweak or a preflight fix actually opens by name —
-    // `assets/` on disk may hold more (raw material for future tweaks), but
-    // that extra weight never rides along in the shipped exe.
-    let refs = referenced_assets(&tweak_docs, &preflight_doc);
+    // Assets: the WHOLE folder is embedded. The playbook's scripts open their
+    // sibling files themselves (DEVMANVIEW.CMD -> DevManView.exe, powerplan.bat
+    // -> Azizos.pow, Install-AzizOptimizer.ps1 -> the optimizer setup, and two
+    // xcopy steps copy the Windows/ and PostInstall/ folders), so "only files a
+    // tweak names" would ship a broken playbook. To leave something out, list
+    // its path (or a folder prefix ending in '/') in data/assets-exclude.txt.
+    let mut refs = referenced_assets(&tweak_docs, &preflight_doc);
+    let required: Vec<String> = serde_json::from_str(&std::fs::read_to_string(data.join("assets-required.json"))
+        .expect("data/assets-required.json is required")).expect("invalid assets-required.json");
+    refs.extend(required);
+    let exclude: Vec<String> = std::fs::read_to_string(data.join("assets-exclude.txt"))
+        .unwrap_or_default()
+        .lines()
+        .map(|l| l.trim().replace('\\', "/"))
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .collect();
+    let excluded = |relp: &str| exclude.iter().any(|e| relp == e || (e.ends_with('/') && relp.starts_with(e.as_str())));
     let mut files = Vec::new();
     walk(&assets, &mut files);
     if files.is_empty() {
-        println!("cargo:warning=assets/ is empty — run scripts/sync-assets.ps1 before a release build");
+        panic!("assets/ is empty: run scripts/sync-assets.ps1 before building");
     }
     src.push_str("pub const ASSETS: &[(&str, &[u8])] = &[\n");
     let mut embedded: BTreeSet<String> = BTreeSet::new();
     for p in &files {
         let relp = rel(&assets, p);
-        if !refs.contains(&relp) {
+        if excluded(&relp) {
             continue;
         }
         writeln!(src, "    (r#\"{relp}\"#, include_bytes!(r#\"{}\"#)),", p.display()).unwrap();
@@ -152,14 +171,16 @@ fn main() {
     let skipped = files.len() - embedded.len();
     if skipped > 0 {
         println!(
-            "cargo:warning=assets/: embedding {} referenced file(s), leaving out {skipped} unreferenced file(s) on disk (no tweak opens them — not shipped in the exe)",
+            "cargo:warning=assets/: embedding {} file(s), {skipped} left out by data/assets-exclude.txt",
             embedded.len()
         );
     }
-    for want in refs.difference(&embedded) {
-        println!(
-            "cargo:warning=assets/{want} is referenced by a tweak or preflight fix but missing — that action/fix will report a clear 'missing asset' error at runtime instead of silently failing"
-        );
+    for want in &refs {
+        let want = want.replace('\\', "/").to_ascii_lowercase();
+        assert!(embedded.iter().any(|f| {
+            let f = f.to_ascii_lowercase();
+            f == want || f.starts_with(&format!("{want}/"))
+        }), "required asset '{want}' is missing or excluded; refusing to build an incomplete executable");
     }
 
     std::fs::write(&out, src).unwrap();

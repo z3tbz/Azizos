@@ -142,7 +142,11 @@ pub fn image_matches(pattern: &str, image: &str) -> bool {
 
 /// Terminate every process whose image name matches `pattern`.
 /// Returns (matched, terminated, first error).
-pub fn kill_processes(pattern: &str) -> (usize, usize, Option<String>) {
+pub fn kill_processes(pattern: &str, dry: bool) -> (usize, usize, Option<String>) {
+    kill_processes_filtered(pattern, None, dry)
+}
+
+pub fn kill_processes_filtered(pattern: &str, path_contains: Option<&str>, dry: bool) -> (usize, usize, Option<String>) {
     let me = std::process::id();
     let (mut matched, mut killed, mut err) = (0, 0, None);
     unsafe {
@@ -157,7 +161,26 @@ pub fn kill_processes(pattern: &str) -> (usize, usize, Option<String>) {
             let len = e.szExeFile.iter().position(|&c| c == 0).unwrap_or(e.szExeFile.len());
             let image = String::from_utf16_lossy(&e.szExeFile[..len]);
             if e.th32ProcessID != me && e.th32ProcessID != 0 && image_matches(pattern, &image) {
+                if let Some(part) = path_contains {
+                    let query = Handle(OpenProcess(0x1000, 0, e.th32ProcessID)); // QUERY_LIMITED_INFORMATION
+                    let mut path = vec![0u16; 32768];
+                    let mut len = path.len() as u32;
+                    if query.0.is_null() || windows_sys::Win32::System::Threading::QueryFullProcessImageNameW(
+                        query.0, 0, path.as_mut_ptr(), &mut len) == 0 {
+                        err.get_or_insert_with(|| format!("{image}: cannot inspect process path: {}", win32_msg(GetLastError())));
+                        ok = Process32NextW(snap.0, &mut e) != 0;
+                        continue;
+                    }
+                    if !String::from_utf16_lossy(&path[..len as usize]).to_lowercase().contains(&part.to_lowercase()) {
+                        ok = Process32NextW(snap.0, &mut e) != 0;
+                        continue;
+                    }
+                }
                 matched += 1;
+                if dry {
+                    ok = Process32NextW(snap.0, &mut e) != 0;
+                    continue;
+                }
                 let h = Handle(OpenProcess(PROCESS_TERMINATE, 0, e.th32ProcessID));
                 if !h.0.is_null() && TerminateProcess(h.0, 1) != 0 {
                     killed += 1;
@@ -263,7 +286,26 @@ pub fn system_disk_is_ssd() -> Option<bool> {
 
 use windows_sys::core::GUID;
 use windows_sys::Win32::Foundation::LocalFree;
-use windows_sys::Win32::System::Power::{PowerImportPowerScheme, PowerSetActiveScheme};
+use windows_sys::Win32::System::Power::{PowerImportPowerScheme, PowerSetActiveScheme, PowerWriteACValueIndex, PowerWriteDCValueIndex};
+
+/// Balanced + processor performance increase threshold, exactly the laptop
+/// branch of the supplied powerplan.bat. No WMI, powercfg, or shell process.
+pub fn apply_laptop_power_profile() -> Result<(), String> {
+    let scheme = GUID::from_u128(0x381b4222_f694_41f0_9685_ff5bb260df2e);
+    let subgroup = GUID::from_u128(0x54533251_82be_4824_96c1_47b60b740d00);
+    let setting = GUID::from_u128(0x4d2b0152_7d5c_498b_88e2_34345392a2c5);
+    unsafe {
+        for (what, code) in [
+            ("PowerWriteACValueIndex", PowerWriteACValueIndex(std::ptr::null_mut(), &scheme, &subgroup, &setting, 5000)),
+            ("PowerWriteDCValueIndex", PowerWriteDCValueIndex(std::ptr::null_mut(), &scheme, &subgroup, &setting, 5000)),
+        ] {
+            if code != 0 { return Err(format!("{what}: {}", win32_msg(code))); }
+        }
+        let code = PowerSetActiveScheme(std::ptr::null_mut(), &scheme);
+        if code != 0 { return Err(format!("PowerSetActiveScheme: {}", win32_msg(code))); }
+    }
+    Ok(())
+}
 
 fn guid_to_string(g: &GUID) -> String {
     format!(
@@ -319,12 +361,22 @@ pub fn import_power_scheme(path: &str, activate: bool) -> Result<String, String>
 
 use windows_sys::Win32::Devices::DeviceAndDriverInstallation::{
     SetupDiCallClassInstaller, SetupDiDestroyDeviceInfoList, SetupDiEnumDeviceInfo, SetupDiGetClassDevsW,
-    SetupDiGetDeviceRegistryPropertyW, SetupDiSetClassInstallParamsW, DICS_DISABLE, DICS_ENABLE, DICS_FLAG_GLOBAL,
+    CM_Get_DevNode_Status, SetupDiGetDeviceRegistryPropertyW, SetupDiSetClassInstallParamsW, CM_PROB_DISABLED, DICS_DISABLE, DN_HAS_PROBLEM, DICS_ENABLE, DICS_FLAG_GLOBAL,
     DIF_PROPERTYCHANGE, DIGCF_ALLCLASSES, DIGCF_PRESENT, HDEVINFO, SPDRP_DEVICEDESC, SPDRP_FRIENDLYNAME,
     SP_CLASSINSTALL_HEADER, SP_DEVINFO_DATA, SP_PROPCHANGE_PARAMS,
 };
 
 const INVALID_HDEVINFO: HDEVINFO = -1;
+
+/// What `set_device_enabled` found: devices that need the change (`pending`),
+/// how many of those were changed, and how many were already in that state.
+#[derive(Debug, Default)]
+pub struct DeviceOutcome {
+    pub pending: usize,
+    pub changed: usize,
+    pub already: usize,
+    pub error: Option<String>,
+}
 
 /// Closes a SetupAPI device-info-set handle on drop.
 struct DevInfoSet(HDEVINFO);
@@ -365,22 +417,27 @@ fn device_display_name(set: HDEVINFO, info: &SP_DEVINFO_DATA) -> String {
 /// its device description) matches `pattern` (`*` glob, same rules as
 /// `image_matches`) — `SetupDiSetClassInstallParamsW` + `SetupDiCallClassInstaller`
 /// with `DIF_PROPERTYCHANGE`, exactly what Device Manager's own Disable/Enable
-/// does, no PowerShell involved. Returns (matched, changed, first error).
-pub fn set_device_enabled(pattern: &str, enable: bool) -> (usize, usize, Option<String>) {
+/// does, no PowerShell involved.
+pub fn set_device_enabled(pattern: &str, enable: bool, dry: bool) -> DeviceOutcome {
     let set = DevInfoSet(unsafe {
         SetupDiGetClassDevsW(std::ptr::null(), std::ptr::null(), std::ptr::null_mut(), DIGCF_PRESENT | DIGCF_ALLCLASSES)
     });
     if set.0 == INVALID_HDEVINFO {
-        return (0, 0, Some(format!("SetupDiGetClassDevsW: {}", win32_msg(unsafe { GetLastError() }))));
+        return DeviceOutcome {
+            error: Some(format!("SetupDiGetClassDevsW: {}", win32_msg(unsafe { GetLastError() }))),
+            ..Default::default()
+        };
     }
 
-    let (mut matched, mut changed, mut err) = (0usize, 0usize, None);
+    let mut out = DeviceOutcome::default();
     let mut index = 0u32;
     loop {
         let mut info: SP_DEVINFO_DATA = unsafe { std::mem::zeroed() };
         info.cbSize = std::mem::size_of::<SP_DEVINFO_DATA>() as u32;
         if unsafe { SetupDiEnumDeviceInfo(set.0, index, &mut info) } == 0 {
-            break; // ERROR_NO_MORE_ITEMS
+            let code = unsafe { GetLastError() };
+            if code != 259 { out.error = Some(format!("SetupDiEnumDeviceInfo: {}", win32_msg(code))); }
+            break;
         }
         index += 1;
 
@@ -388,7 +445,18 @@ pub fn set_device_enabled(pattern: &str, enable: bool) -> (usize, usize, Option<
         if name.is_empty() || !glob(pattern, &name) {
             continue;
         }
-        matched += 1;
+        // Already in the wanted state (Device Manager's "disabled" = problem 22)?
+        let (mut status, mut problem) = (0u32, 0u32);
+        let known = unsafe { CM_Get_DevNode_Status(&mut status, &mut problem, info.DevInst, 0) } == 0;
+        let disabled = known && status & DN_HAS_PROBLEM != 0 && problem == CM_PROB_DISABLED;
+        if known && disabled != enable {
+            out.already += 1;
+            continue;
+        }
+        out.pending += 1;
+        if dry {
+            continue;
+        }
 
         let params = SP_PROPCHANGE_PARAMS {
             ClassInstallHeader: SP_CLASSINSTALL_HEADER {
@@ -412,12 +480,67 @@ pub fn set_device_enabled(pattern: &str, enable: bool) -> (usize, usize, Option<
                 && SetupDiCallClassInstaller(DIF_PROPERTYCHANGE, set.0, &info) != 0
         };
         if ok {
-            changed += 1;
-        } else if err.is_none() {
-            err = Some(format!("{name}: {}", win32_msg(unsafe { GetLastError() })));
+            out.changed += 1;
+        } else if out.error.is_none() {
+            out.error = Some(format!("{name}: {}", win32_msg(unsafe { GetLastError() })));
         }
     }
-    (matched, changed, err)
+    out
+}
+
+// ------------------------------------------------------- volume / env notify --
+
+use windows_sys::Win32::Storage::FileSystem::{GetVolumeInformationW, SetVolumeLabelW};
+use windows_sys::Win32::UI::WindowsAndMessaging::SendMessageTimeoutW;
+
+/// Current label of a volume root such as `C:\` (what `label.exe` shows).
+pub fn volume_label(root: &str) -> Option<String> {
+    let r = wide(root);
+    let mut buf = [0u16; 261];
+    let ok = unsafe {
+        GetVolumeInformationW(
+            r.as_ptr(),
+            buf.as_mut_ptr(),
+            buf.len() as u32,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            0,
+        )
+    };
+    (ok != 0).then(|| String::from_utf16_lossy(&buf[..buf.iter().position(|&c| c == 0).unwrap_or(0)]))
+}
+
+/// `label <drive> <name>` without label.exe.
+pub fn set_volume_label(root: &str, label: &str) -> Result<(), String> {
+    let (r, l) = (wide(root), wide(label));
+    if unsafe { SetVolumeLabelW(r.as_ptr(), l.as_ptr()) } != 0 {
+        Ok(())
+    } else {
+        Err(format!("label {root}: {}", win32_msg(unsafe { GetLastError() })))
+    }
+}
+
+/// WM_SETTINGCHANGE "Environment" to every top-level window, so Explorer and
+/// new consoles pick up a changed variable right away (what `setx` does).
+pub fn broadcast_environment_change() {
+    const HWND_BROADCAST: isize = 0xFFFF;
+    const WM_SETTINGCHANGE: u32 = 0x001A;
+    const SMTO_ABORTIFHUNG: u32 = 0x0002;
+    let what = wide("Environment");
+    let mut result = 0usize;
+    unsafe {
+        SendMessageTimeoutW(
+            HWND_BROADCAST as *mut c_void,
+            WM_SETTINGCHANGE,
+            0,
+            what.as_ptr() as isize,
+            SMTO_ABORTIFHUNG,
+            1000,
+            &mut result,
+        );
+    }
 }
 
 #[cfg(test)]
@@ -450,13 +573,19 @@ mod tests {
 
     #[test]
     fn kill_with_no_match_touches_nothing() {
-        assert_eq!(kill_processes("azizos_no_such_process_*").0, 0);
+        assert_eq!(kill_processes("azizos_no_such_process_*", false).0, 0);
     }
 
     #[test]
     fn ssd_query_answers_on_this_machine() {
         // just must not crash; value depends on the hardware
         let _ = system_disk_is_ssd();
+    }
+
+    #[test]
+    fn reads_the_system_volume_label() {
+        let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".into());
+        assert!(volume_label(&format!("{drive}\\")).is_some());
     }
 
     #[test]
@@ -472,10 +601,9 @@ mod tests {
     fn device_enum_finds_nothing_for_a_bogus_pattern() {
         // Real SetupDiGetClassDevsW enumeration on this machine, but a pattern
         // nothing can match: exercises the whole walk read-only, changes nothing.
-        let (matched, changed, err) = set_device_enabled("Azizos-No-Such-Device-*", false);
-        assert_eq!(matched, 0);
-        assert_eq!(changed, 0);
-        assert!(err.is_none());
+        let o = set_device_enabled("Azizos-No-Such-Device-*", false, false);
+        assert_eq!((o.pending, o.changed, o.already), (0, 0, 0));
+        assert!(o.error.is_none());
     }
 
     // set_device_enabled with a matching pattern is not exercised here: it

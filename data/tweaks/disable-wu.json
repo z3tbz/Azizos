@@ -1,389 +1,388 @@
 {
-    "id":  "disable-wu",
-    "name":  {
-                 "ar":  "تعطيل تحديثات ويندوز",
-                 "en":  "Disable Windows Update"
-             },
-    "category":  "updates",
-    "profiles":  [
-
-                 ],
-    "default":  false,
-    "requires_reboot":  false,
-    "risk":  "medium",
-    "actions":  [
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "DeferQualityUpdates",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "DeferFeatureUpdates",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "BranchReadinessLevel",
-                        "kind":  "sz",
-                        "data":  "CB"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "IsDeferralIsActive",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "IsWUfBConfigured",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "IsWUfBDualScanActive",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "UseUpdateClassPolicySource",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "SetPolicyDrivenUpdateSourceForFeatureUpdates",
-                        "kind":  "dword",
-                        "data":  4294967295
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "SetPolicyDrivenUpdateSourceForQualityUpdates",
-                        "kind":  "dword",
-                        "data":  4294967295
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "SetPolicyDrivenUpdateSourceForDriverUpdates",
-                        "kind":  "dword",
-                        "data":  4294967295
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "SetPolicyDrivenUpdateSourceForOtherUpdates",
-                        "kind":  "dword",
-                        "data":  4294967295
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "PolicySources",
-                        "kind":  "dword",
-                        "data":  22
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "QualityUpdatesPaused",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "QualityUpdatePausePeriodInDays",
-                        "kind":  "dword",
-                        "data":  69909
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "FeatureUpdatesPaused",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "FeatureUpdatePausePeriodInDays",
-                        "kind":  "dword",
-                        "data":  69909
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "PauseFeatureUpdatesStartTime",
-                        "kind":  "sz",
-                        "data":  "2021-10-05T16:02:16Z"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "PauseFeatureUpdatesEndTime",
-                        "kind":  "sz",
-                        "data":  "2021-10-05T16:02:16Z"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "PauseQualityUpdatesStartTime",
-                        "kind":  "sz",
-                        "data":  "2021-10-05T16:02:16Z"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
-                        "name":  "PauseQualityUpdatesEndTime",
-                        "kind":  "sz",
-                        "data":  "2050-01-01T10:38:56Z"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\Settings",
-                        "name":  "PausedFeatureStatus",
-                        "kind":  "dword",
-                        "data":  2
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\Settings",
-                        "name":  "PausedQualityStatus",
-                        "kind":  "dword",
-                        "data":  2
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX",
-                        "name":  "IsConvergedUpdateStackEnabled",
-                        "kind":  "dword",
-                        "data":  1
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\RebootDowntime",
-                        "name":  "CurrentDowntimeEstimate",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\RebootDowntime",
-                        "name":  "RebootDowntimeLongVariantStringEnabled",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "ActiveHoursEnd",
-                        "kind":  "dword",
-                        "data":  23
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "ActiveHoursStart",
-                        "kind":  "dword",
-                        "data":  8
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "AllowAutoWindowsUpdateDownloadOverMeteredNetwork",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "DeferFeatureUpdatesPeriodInDays",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "DeferQualityUpdatesPeriodInDays",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "FlightCommitted",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "LastToastAction",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "UxOption",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "InsiderProgramEnabled",
-                        "kind":  "dword",
-                        "data":  0
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "PendingRebootStartTime",
-                        "kind":  "sz",
-                        "data":  "2021-10-05T16:02:16"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "PauseQualityUpdatesStartTime",
-                        "kind":  "sz",
-                        "data":  "2021-10-05T16:02:16Z"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "PauseUpdatesExpiryTime",
-                        "kind":  "sz",
-                        "data":  "2050-01-01T10:38:56Z"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "PauseFeatureUpdatesEndTime",
-                        "kind":  "sz",
-                        "data":  "2050-01-01T10:38:56Z"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "PauseQualityUpdatesEndTime",
-                        "kind":  "sz",
-                        "data":  "2050-01-01T10:38:56Z"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
-                        "name":  "PauseUpdatesStartTime",
-                        "kind":  "sz",
-                        "data":  "2021-10-05T16:02:16Z"
-                    },
-                    {
-                        "type":  "registry",
-                        "op":  "set",
-                        "hive":  "hklm",
-                        "path":  "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\DriverSearching",
-                        "name":  "SearchOrderConfig",
-                        "kind":  "dword",
-                        "data":  0
-                    }
-                ],
-    "description":  {
-                        "ar":  "بدون تحديثات تلقائية. التحديث يصير يدوي.",
-                        "en":  "No automatic updates. You will update manually."
-                    }
+    "id": "disable-wu",
+    "name": {
+        "ar": "تعطيل تحديثات ويندوز",
+        "en": "Disable Windows Update"
+    },
+    "category": "updates",
+    "profiles": [],
+    "default": false,
+    "requires_reboot": false,
+    "risk": "medium",
+    "actions": [
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "DeferQualityUpdates",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "DeferFeatureUpdates",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "BranchReadinessLevel",
+            "kind": "sz",
+            "data": "CB"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "IsDeferralIsActive",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "IsWUfBConfigured",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "IsWUfBDualScanActive",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "UseUpdateClassPolicySource",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "SetPolicyDrivenUpdateSourceForFeatureUpdates",
+            "kind": "dword",
+            "data": 4294967295
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "SetPolicyDrivenUpdateSourceForQualityUpdates",
+            "kind": "dword",
+            "data": 4294967295
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "SetPolicyDrivenUpdateSourceForDriverUpdates",
+            "kind": "dword",
+            "data": 4294967295
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "SetPolicyDrivenUpdateSourceForOtherUpdates",
+            "kind": "dword",
+            "data": 4294967295
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "PolicySources",
+            "kind": "dword",
+            "data": 22
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "QualityUpdatesPaused",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "QualityUpdatePausePeriodInDays",
+            "kind": "dword",
+            "data": 69909
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "FeatureUpdatesPaused",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "FeatureUpdatePausePeriodInDays",
+            "kind": "dword",
+            "data": 69909
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "PauseFeatureUpdatesStartTime",
+            "kind": "sz",
+            "data": "2021-10-05T16:02:16Z"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "PauseFeatureUpdatesEndTime",
+            "kind": "sz",
+            "data": "2021-10-05T16:02:16Z"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "PauseQualityUpdatesStartTime",
+            "kind": "sz",
+            "data": "2021-10-05T16:02:16Z"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\PolicyState",
+            "name": "PauseQualityUpdatesEndTime",
+            "kind": "sz",
+            "data": "2050-01-01T10:38:56Z"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\Settings",
+            "name": "PausedFeatureStatus",
+            "kind": "dword",
+            "data": 2
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UpdatePolicy\\Settings",
+            "name": "PausedQualityStatus",
+            "kind": "dword",
+            "data": 2
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX",
+            "name": "IsConvergedUpdateStackEnabled",
+            "kind": "dword",
+            "data": 1
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\RebootDowntime",
+            "name": "CurrentDowntimeEstimate",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\RebootDowntime",
+            "name": "RebootDowntimeLongVariantStringEnabled",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "ActiveHoursEnd",
+            "kind": "dword",
+            "data": 23
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "ActiveHoursStart",
+            "kind": "dword",
+            "data": 8
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "AllowAutoWindowsUpdateDownloadOverMeteredNetwork",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "DeferFeatureUpdatesPeriodInDays",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "DeferQualityUpdatesPeriodInDays",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "FlightCommitted",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "LastToastAction",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "UxOption",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "InsiderProgramEnabled",
+            "kind": "dword",
+            "data": 0
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "PendingRebootStartTime",
+            "kind": "sz",
+            "data": "2021-10-05T16:02:16"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "PauseQualityUpdatesStartTime",
+            "kind": "sz",
+            "data": "2021-10-05T16:02:16Z"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "PauseUpdatesExpiryTime",
+            "kind": "sz",
+            "data": "2050-01-01T10:38:56Z"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "PauseFeatureUpdatesEndTime",
+            "kind": "sz",
+            "data": "2050-01-01T10:38:56Z"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "PauseQualityUpdatesEndTime",
+            "kind": "sz",
+            "data": "2050-01-01T10:38:56Z"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings",
+            "name": "PauseUpdatesStartTime",
+            "kind": "sz",
+            "data": "2021-10-05T16:02:16Z"
+        },
+        {
+            "type": "registry",
+            "op": "set",
+            "hive": "hklm",
+            "path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\DriverSearching",
+            "name": "SearchOrderConfig",
+            "kind": "dword",
+            "data": 0
+        }
+    ],
+    "description": {
+        "ar": "بدون تحديثات تلقائية. التحديث يصير يدوي.",
+        "en": "No automatic updates. You will update manually."
+    },
+    "order": 250
 }

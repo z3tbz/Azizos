@@ -19,6 +19,11 @@ fn load_dir(dir: &Path) -> Result<Catalog, String> {
 }
 
 fn main() {
+    #[cfg(all(windows, feature = "native"))]
+    if std::env::args().any(|a| a == "--probe") {
+        probe();
+        return;
+    }
     let dir = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "../data/tweaks".to_string());
@@ -58,4 +63,40 @@ fn main() {
         }
         Err(e) => eprintln!("plan error: {e}"),
     }
+}
+
+#[cfg(all(windows, feature = "native"))]
+fn probe() {
+    use azizos_engine::{Backend, Detector, WindowsBackend, WindowsDetector};
+    let args: Vec<String> = std::env::args().collect();
+    let value = |key: &str, default: &str| args.iter().position(|a| a == key)
+        .and_then(|i| args.get(i + 1)).cloned().unwrap_or_else(|| default.into());
+    let dir = value("--catalog", "data/tweaks");
+    let assets = value("--assets", "assets");
+    let catalog = load_dir(Path::new(&dir)).expect("load catalog");
+    let profile = WindowsDetector.profile().expect("read system profile");
+    let selected = catalog.all().iter().map(|t| t.id.clone()).collect::<Vec<_>>();
+    let plan = catalog.plan(&selected, &profile).expect("plan catalog");
+    let mut backend = WindowsBackend::probing(assets.into());
+    let mut records = Vec::new();
+    let (mut changes, mut already, mut absent, mut failed) = (0, 0, 0, 0);
+    for id in plan.immediate.iter().chain(&plan.deferred) {
+        for (index, action) in catalog.get(id).unwrap().actions.iter().enumerate() {
+            let (state, detail) = match backend.apply(action) {
+                Ok(azizos_engine::Applied::Done) => { changes += 1; ("would_change", String::new()) }
+                Ok(azizos_engine::Applied::Already(s)) => { already += 1; ("already", s) }
+                Ok(azizos_engine::Applied::NotApplicable(s)) => { absent += 1; ("not_applicable", s) }
+                Err(e) => { failed += 1; ("failed", e) }
+            };
+            records.push(serde_json::json!({"tweak": id, "index": index, "state": state, "detail": detail}));
+        }
+    }
+    let document = serde_json::json!({"mode": "read_only_probe", "system": profile,
+        "requirements": azizos_engine::check_requirements(&WindowsDetector),
+        "counts": {"would_change": changes, "already": already, "not_applicable": absent, "failed": failed},
+        "actions": records});
+    let output = value("--out", "probe-results.json");
+    std::fs::write(&output, serde_json::to_vec_pretty(&document).unwrap()).expect("write diagnostic result");
+    println!("Read-only probe: {changes} potential changes, {already} already, {absent} absent, {failed} failures. {output}");
+    if failed != 0 { std::process::exit(2); }
 }

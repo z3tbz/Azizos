@@ -1,26 +1,25 @@
 {
-    "id":  "remove-uwp-photos",
-    "name":  {
-                 "ar":  "عارض الصور الكلاسيكي",
-                 "en":  "Legacy Photo Viewer"
-             },
-    "category":  "debloat",
-    "profiles":  [
-
-                 ],
-    "default":  false,
-    "requires_reboot":  false,
-    "risk":  "low",
-    "actions":  [
-                    {
-                        "type":  "appx",
-                        "name":  "*Microsoft.Windows.Photos*",
-                        "scope":  "family",
-                        "op":  "remove"
-                    }
-                ],
-    "description":  {
-                        "ar":  "عارض صور كلاسيكي سريع بدل تطبيق الصور.",
-                        "en":  "Fast classic photo viewer instead of the Photos app."
-                    }
+    "id": "remove-uwp-photos",
+    "name": {
+        "ar": "عارض الصور الكلاسيكي",
+        "en": "Legacy Photo Viewer"
+    },
+    "category": "debloat",
+    "profiles": [],
+    "default": false,
+    "requires_reboot": false,
+    "risk": "low",
+    "actions": [
+        {
+            "type": "appx",
+            "name": "*Microsoft.Windows.Photos*",
+            "scope": "family",
+            "op": "remove"
+        }
+    ],
+    "description": {
+        "ar": "عارض صور كلاسيكي سريع بدل تطبيق الصور.",
+        "en": "Fast classic photo viewer instead of the Photos app."
+    },
+    "order": 250
 }

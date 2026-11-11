@@ -7,8 +7,8 @@
 //! heavier one.
 
 use windows::core::HSTRING;
-use windows::Management::Deployment::{DeploymentProgress, DeploymentResult, PackageManager};
-use windows::Win32::System::WinRT::{RoInitialize, RO_INIT_MULTITHREADED};
+use windows::Management::Deployment::{DeploymentProgress, DeploymentResult, PackageManager, RemovalOptions};
+use windows::Win32::System::WinRT::{RoInitialize, RoUninitialize, RO_INIT_MULTITHREADED};
 use windows_future::{AsyncStatus, IAsyncOperationWithProgress};
 
 use std::time::{Duration, Instant};
@@ -16,8 +16,10 @@ use std::time::{Duration, Instant};
 /// `RoInitialize` is idempotent per thread; a second call on the same thread
 /// returns `S_FALSE` ("already initialized"), which `windows::core::Result`
 /// treats as success, so this is safe to call before every operation.
-fn ensure_initialized() -> Result<(), String> {
-    unsafe { RoInitialize(RO_INIT_MULTITHREADED) }.map_err(|e| format!("RoInitialize: {e}"))
+struct Runtime;
+impl Drop for Runtime { fn drop(&mut self) { unsafe { RoUninitialize() }; } }
+fn ensure_initialized() -> Result<Runtime, String> {
+    unsafe { RoInitialize(RO_INIT_MULTITHREADED) }.map(|_| Runtime).map_err(|e| format!("RoInitialize: {e}"))
 }
 
 /// One registered package: its full name (`Name_Version_Arch_Res_Publisher`,
@@ -30,23 +32,21 @@ pub struct PackageRef {
 }
 
 /// Every package registered to any user — the WinRT equivalent of
-/// `Get-AppxPackage -AllUsers`. An empty `userSecurityId` is how the API asks
-/// for every user's packages, not just the caller's (needs admin, which
-/// Azizos always runs as).
+/// `Get-AppxPackage -AllUsers`. FindPackages enumerates all users; an empty
+/// SID passed to FindPackagesByUserSecurityId would mean the current user.
 pub fn list_packages() -> Result<Vec<PackageRef>, String> {
-    ensure_initialized()?;
+    let _runtime = ensure_initialized()?;
     let pm = PackageManager::new().map_err(|e| format!("PackageManager: {e}"))?;
     let packages = pm
-        .FindPackagesByUserSecurityId(&HSTRING::new())
-        .map_err(|e| format!("FindPackagesByUserSecurityId: {e}"))?;
-    Ok(packages
-        .into_iter()
-        .filter_map(|p| p.Id().ok())
-        .filter_map(|id| Some(PackageRef {
-            full_name: id.FullName().ok()?.to_string_lossy(),
-            family_name: id.FamilyName().ok()?.to_string_lossy(),
-        }))
-        .collect())
+        .FindPackages()
+        .map_err(|e| format!("FindPackages (all users): {e}"))?;
+    packages.into_iter().map(|p| {
+        let id = p.Id().map_err(|e| e.to_string())?;
+        Ok(PackageRef {
+            full_name: id.FullName().map_err(|e| e.to_string())?.to_string_lossy(),
+            family_name: id.FamilyName().map_err(|e| e.to_string())?.to_string_lossy(),
+        })
+    }).collect()
 }
 
 fn wait_deployment(
@@ -75,7 +75,7 @@ fn wait_deployment(
                     let text = result.ErrorText().map(|t| t.to_string_lossy()).unwrap_or_default();
                     Err(format!("0x{:08X} {text}", code.0 as u32).trim_end().to_string())
                 }
-                Err(_) => Ok(()),
+                Err(e) => Err(format!("ExtendedErrorCode: {e}")),
             }
         }
         AsyncStatus::Error => {
@@ -90,10 +90,10 @@ const T_REMOVE: Duration = Duration::from_secs(2 * 60);
 
 /// Remove a package for every user, by its exact full name (from `list_full_names`).
 pub fn remove_for_all_users(full_name: &str) -> Result<(), String> {
-    ensure_initialized()?;
+    let _runtime = ensure_initialized()?;
     let pm = PackageManager::new().map_err(|e| format!("PackageManager: {e}"))?;
     let op = pm
-        .RemovePackageAsync(&HSTRING::from(full_name))
+        .RemovePackageWithOptionsAsync(&HSTRING::from(full_name), RemovalOptions::RemoveForAllUsers)
         .map_err(|e| format!("RemovePackageAsync: {e}"))?;
     wait_deployment(op, T_REMOVE)
 }
@@ -101,7 +101,7 @@ pub fn remove_for_all_users(full_name: &str) -> Result<(), String> {
 /// Stop offering a package to new users/resets (`DeprovisionPackageForAllUsersAsync`),
 /// by family name (`Name_Publisher`, no version/arch — from `PackageId::FamilyName`).
 pub fn deprovision(family_name: &str) -> Result<(), String> {
-    ensure_initialized()?;
+    let _runtime = ensure_initialized()?;
     let pm = PackageManager::new().map_err(|e| format!("PackageManager: {e}"))?;
     let op = pm
         .DeprovisionPackageForAllUsersAsync(&HSTRING::from(family_name))

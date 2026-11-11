@@ -13,7 +13,7 @@
   };
   const $ = id => document.getElementById(id);
   const CAT = window.CATALOG;
-  const STEPS = ["welcome", "preflight", "tweaks", "review", "apply", "done"];
+  const STEPS = ["welcome", "preflight", "tweaks", "apply", "done"];
   const ORDER = ["base", "performance", "services", "debloat", "privacy", "appearance", "devices", "updates", "security"];
   const categoryOf = t => t.id.startsWith("core-") ? "base" : t.category;
   const categories = ORDER.filter(c => CAT.tweaks.some(t => categoryOf(t) === c));
@@ -21,7 +21,8 @@
   const stored = key => { try { return localStorage.getItem(key); } catch (_) { return null; } };
   const save = (key, value) => { try { localStorage.setItem(key, value); } catch (_) {} };
   let lang = stored("azizos-language") === "en" ? "en" : "ar";
-  let theme = stored("azizos-theme") === "dark" ? "dark" : "light";
+  let theme = stored("azizos-theme") === "light" ? "light" : "dark";
+  let catPage = 0, configured = false, snapshot = null;
   let current = "welcome", reqStatuses = [], requirementsError = null, sys = null, lastReport = null, running = false;
   const T = () => window.I18N[lang];
   const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -58,8 +59,7 @@
     $("langBtn").setAttribute("aria-label", lang === "ar" ? "English" : "العربية");
     document.querySelectorAll("[data-i18n]").forEach(el => { const value = T()[el.dataset.i18n]; if (typeof value === "string") el.textContent = value; });
     document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = T()[el.dataset.i18nTitle]; el.setAttribute("aria-label",el.title); });
-    applyTheme(); renderRail(); renderSystem(); renderRequirements(); renderCategorySelect(); renderOptions();
-    if (current === "review") renderReview();
+    applyTheme(); renderRail(); renderSystem(); renderRequirements(); renderOptions(); renderConfigure();
     if (current === "done") renderDone();
   }
   $("langBtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; save("azizos-language", lang); applyLanguage(); };
@@ -67,18 +67,22 @@
   function go(screen) {
     if (running || !STEPS.includes(screen)) return;
     if (screen === "tweaks" && (requirementsError || reqStatuses.length !== 4 || reqStatuses.some(s => s.met === "Fail"))) return;
-    if ((screen === "review" || screen === "apply") && !selected.size) return;
+    if (screen === "apply" && (!configured || !selected.size)) return;
     current = screen;
     document.body.dataset.stage = screen;
     document.querySelectorAll(".screen").forEach(el => el.hidden = el.dataset.screen !== screen);
     renderRail();
-    if (screen === "tweaks") renderOptions();
-    if (screen === "review") renderReview();
+    if (screen === "tweaks") renderConfigure();
     if (screen === "done") renderDone();
     $("app").focus({preventScroll:true});
     if (screen === "apply") runApply();
   }
   document.querySelectorAll("[data-next]").forEach(button => button.onclick = () => go(button.dataset.next));
+  document.querySelectorAll("[data-cancel]").forEach(button => button.onclick = () => {
+    if (running) return;
+    if (TAURI) invoke("window_control", {action:"close"}).catch(e => window.AZ_DIAG.show(e));
+    else window.close();
+  });
 
   async function loadSystem() {
     if (TAURI) { try { sys = await invoke("detect_system"); } catch (e) { sys = null; window.AZ_DIAG.show(e); } }
@@ -141,31 +145,64 @@
     finally { $("recheckBtn").disabled = false; $("recheckBtn").textContent = T().recheck; }
   };
 
-  function renderCategorySelect() {
-    const previous = $("categorySelect").value;
-    $("categorySelect").innerHTML = `<option value="all">${esc(T().all_categories)}</option>` + categories.map(c => `<option value="${c}">${esc(categoryName(c))}</option>`).join("");
-    $("categorySelect").value = categories.includes(previous) ? previous : "all";
-  }
+  const modal = $("modal");
+  const lastPage = () => catPage >= categories.length - 1;
   function renderSelection() {
     $("selectionLine").textContent = `${selected.size} ${T().selected}`;
-    $("optNext").disabled = selected.size === 0;
+    $("mNext").disabled = lastPage() && selected.size === 0;
+  }
+  function openModal() {
+    snapshot = new Set(selected); catPage = 0;
+    modal.hidden = false; renderOptions();
+    modal.querySelector("input,select")?.focus();
+  }
+  function closeModal(accept) {
+    if (accept) configured = selected.size > 0;
+    else if (snapshot) { selected.clear(); snapshot.forEach(id => selected.add(id)); }
+    snapshot = null; modal.hidden = true;
+    renderConfigure(); $("selectBtn").focus();
+  }
+  $("selectBtn").onclick = openModal;
+  $("mCancel").onclick = () => closeModal(false);
+  $("mNext").onclick = () => { if (lastPage()) closeModal(true); else { catPage++; renderOptions(); } };
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) closeModal(false); });
+  function renderConfigure() {
+    const choices = selectedTweaks();
+    const high = choices.filter(t => t.risk === "high");
+    $("cfgBanner").className = `banner ${configured ? "" : "info"}`;
+    $("cfgBanner").innerHTML = configured
+      ? `<span class="ico" aria-hidden="true">✓</span><span class="banner-text">${esc(T().cfg_done)} · ${choices.length}</span><button class="text-button" id="resetBtn" type="button">${esc(T().reset)}</button>`
+      : `<span class="ico" aria-hidden="true">i</span><span class="banner-text">${esc(T().cfg_must)}</span>`;
+    if (configured) $("resetBtn").onclick = () => {
+      configured = false; selected.clear(); CAT.tweaks.forEach(t => { if (t.default) selected.add(t.id); });
+      $("previewResult").textContent = ""; renderConfigure();
+    };
+    $("selectBtn").textContent = configured ? T().edit_options : T().select_options;
+    $("cfgWarn").hidden = !(configured && high.length);
+    $("cfgWarn").innerHTML = high.length ? `<strong>${T().high_warn}</strong><br>${high.map(t => esc(nameOf(t))).join("، ")}` : "";
+    $("previewBox").hidden = !configured;
+    $("optNext").disabled = !configured;
+    $("autoRestart").closest("label").title = configured && choices.some(t => t.requires_reboot) ? T().restart_needed : "";
   }
   function renderOptions() {
-    const filter = $("categorySelect").value || "all";
+    catPage = Math.max(0, Math.min(catPage, categories.length - 1));
+    const filter = categories[catPage];
+    $("modalSub").textContent = `${categoryName(filter)} (${catPage + 1}/${categories.length})`;
+    $("presetField").hidden = catPage !== 0;
+    $("mNext").textContent = lastPage() ? T().finish_select : T().next;
     const grid = $("cardGrid"); grid.innerHTML = "";
-    CAT.tweaks.filter(t => filter === "all" || categoryOf(t) === filter).forEach(t => {
-      const option = document.createElement("article"); option.className = "option";
-      const kinds = Object.entries(t.kinds || {}).map(([kind,count]) => `${T().kinds[kind] || kind}: ${count}`).join(" · ");
-      option.innerHTML = `<label class="option-main"><input type="checkbox" data-tweak="${esc(t.id)}" ${selected.has(t.id) ? "checked" : ""} /><span class="option-copy"><span class="option-title">${esc(nameOf(t))}</span><span class="option-description">${esc(t.description?.[lang] || "")}</span><span class="option-tags">${t.risk === "high" ? `<span class="tag risk">${T().risk_high}</span>` : t.risk === "medium" ? `<span class="tag">${T().risk_medium}</span>` : ""}${t.requires_reboot ? `<span class="tag">${T().reboot}</span>` : ""}</span></span></label><details class="details"><summary>${T().action_details}</summary><p>${t.actions_count} ${T().actions} · ${esc(kinds)}</p></details>`;
+    CAT.tweaks.filter(t => categoryOf(t) === filter).forEach(t => {
+      const option = document.createElement("label"); option.className = "mopt";
+      option.innerHTML = `<input type="checkbox" data-tweak="${esc(t.id)}" ${selected.has(t.id) ? "checked" : ""} /><span class="option-copy"><span class="option-title">${esc(nameOf(t))}</span><span class="option-description">${esc(t.description?.[lang] || "")}</span><span class="option-tags">${t.risk === "high" ? `<span class="tag risk">${T().risk_high}</span>` : t.risk === "medium" ? `<span class="tag">${T().risk_medium}</span>` : ""}${t.requires_reboot ? `<span class="tag">${T().reboot}</span>` : ""}</span></span>`;
       option.querySelector("input").onchange = event => {
         event.target.checked ? selected.add(t.id) : selected.delete(t.id);
         $("profileSelect").value = "custom"; renderSelection();
       };
       grid.appendChild(option);
     });
+    $("cardGrid").scrollTop = 0;
     renderSelection();
   }
-  $("categorySelect").onchange = renderOptions;
   $("profileSelect").onchange = event => {
     const preset = event.target.value;
     if (preset !== "custom") {
@@ -174,13 +211,6 @@
     }
     renderOptions();
   };
-  function renderReview() {
-    const choices = selectedTweaks();
-    const high = choices.filter(t => t.risk === "high");
-    const restart = choices.some(t => t.requires_reboot);
-    $("reviewBody").innerHTML = `<div class="review-summary"><div class="summary-row"><span>${T().selection}</span><b>${choices.length}</b></div><div class="summary-row"><span>${T().restart_needed}</span><b>${restart ? T().yes : T().no}</b></div></div>${high.length ? `<p class="warning"><strong>${T().high_warn}</strong><br>${high.map(t => esc(nameOf(t))).join("، ")}</p>` : ""}<details class="details"><summary>${T().selected_details}</summary><ul class="review-list">${choices.map(t => `<li>${esc(nameOf(t))}</li>`).join("")}</ul></details>`;
-    $("previewResult").textContent = "";
-  }
   $("previewBtn").onclick = async () => {
     const button = $("previewBtn"); button.disabled = true; $("previewResult").textContent = T().preview_working;
     try {

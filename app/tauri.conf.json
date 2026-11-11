@@ -11,13 +11,13 @@
     "windows": [
       {
         "label": "main",
-        "title": "Azizos",
+        "title": "Aziz Playbook",
         "decorations": false,
-        "theme": "Light",
-        "width": 980,
-        "height": 740,
-        "minWidth": 760,
-        "minHeight": 560,
+        "theme": "Dark",
+        "width": 700,
+        "height": 500,
+        "minWidth": 640,
+        "minHeight": 460,
         "resizable": true,
         "center": true
       }

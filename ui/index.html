@@ -1,52 +1,52 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-theme="light">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Azizos</title>
+<title>Aziz Playbook</title>
+<link rel="stylesheet" href="fonts.css" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 <div class="window">
-  <aside class="sidebar" aria-label="Azizos">
-    <div class="brand" aria-label="Azizos">AZIZ<span>OS</span></div>
-    <p class="sidebar-sub" data-i18n="app_subtitle"></p>
-    <ol class="rail" id="rail"></ol>
-    <div class="sidebar-foot"><span>Windows 10 / 11</span><span data-i18n="free_note"></span></div>
-  </aside>
-  <div class="workspace">
-    <header class="topbar">
-      <span class="step-caption window-drag" id="stepCaption"></span>
-      <div class="top-actions">
-        <span class="demo-badge" id="demoBadge" data-i18n="demo" hidden></span>
-        <button id="logsBtn" class="utility" type="button" data-i18n="logs" hidden></button>
-        <button id="repairBtn" class="utility" type="button" data-i18n="app_repair" hidden></button>
-        <button id="langBtn" class="utility" type="button" aria-label="English">EN</button>
-        <button id="themeBtn" class="utility" type="button"></button>
-        <div id="nativeControls" class="native-controls" hidden>
-          <button id="windowMinimize" type="button" data-i18n-title="window_minimize">−</button>
-          <button id="windowMaximize" type="button" data-i18n-title="window_maximize">□</button>
-          <button id="windowClose" type="button" data-i18n-title="window_close">×</button>
-        </div>
+  <header class="topbar">
+    <div class="brand"><img src="logo-playbook.svg" alt="" width="28" height="28" /><span class="wordmark">AZIZ <em>PLAYBOOK</em></span></div>
+    <span class="step-caption window-drag" id="stepCaption"></span>
+    <div class="top-actions">
+      <span class="demo-badge" id="demoBadge" data-i18n="demo" hidden></span>
+      <button id="logsBtn" class="utility" type="button" data-i18n="logs" hidden></button>
+      <button id="repairBtn" class="utility" type="button" data-i18n="app_repair" hidden></button>
+      <button id="langBtn" class="utility" type="button" aria-label="English">EN</button>
+      <button id="themeBtn" class="utility" type="button"></button>
+      <div id="nativeControls" class="native-controls" hidden>
+        <button id="windowMinimize" type="button" data-i18n-title="window_minimize">−</button>
+        <button id="windowMaximize" type="button" data-i18n-title="window_maximize">□</button>
+        <button id="windowClose" type="button" data-i18n-title="window_close">×</button>
       </div>
-    </header>
-    <details id="diagnosticPanel" class="diagnostic-panel" role="alert" hidden><summary id="diagnosticSummary"></summary><code id="diagnosticText"></code></details>
-    <details id="repairPanel" class="diagnostic-panel repair-panel" hidden><summary id="repairSummary"></summary><div id="repairResults"></div></details>
+    </div>
+  </header>
+  <details id="diagnosticPanel" class="diagnostic-panel" role="alert" hidden><summary id="diagnosticSummary"></summary><code id="diagnosticText"></code></details>
+  <details id="repairPanel" class="diagnostic-panel repair-panel" hidden><summary id="repairSummary"></summary><div id="repairResults"></div></details>
+  <div class="body">
+    <aside class="sidebar" aria-label="Aziz Playbook">
+      <div class="pb-card">
+        <img src="logo-playbook.svg" alt="" width="46" height="46" />
+        <div class="pb-text"><strong>Aziz Playbook</strong><span data-i18n="playbook_sub"></span></div>
+      </div>
+      <ol class="rail" id="rail" aria-label="Progress"></ol>
+      <div class="sidebar-foot"><span>Windows 10 / 11</span><span data-i18n="free_note"></span></div>
+    </aside>
     <main id="app" tabindex="-1">
       <section class="screen" data-screen="welcome" aria-labelledby="welcomeTitle">
         <div class="content welcome-content">
-          <span class="eyebrow" data-i18n="welcome_kicker"></span>
           <h1 id="welcomeTitle" data-i18n="welcome_title"></h1>
           <p class="lead" data-i18n="welcome_sub"></p>
-          <div class="playbook-card">
-            <div class="playbook-name"><strong>Azizos</strong><span data-i18n="playbook_label"></span></div>
-            <p data-i18n="playbook_desc"></p>
-            <div class="playbook-meta"><span>Windows 10 / 11</span><span data-i18n="offline"></span></div>
-          </div>
+          <div class="banner"><span class="ico" aria-hidden="true">✓</span><div><b data-i18n="playbook_label"></b><p data-i18n="playbook_desc"></p></div></div>
           <p class="welcome-note" data-i18n="welcome_note"></p>
           <details class="details system-details"><summary data-i18n="system_details"></summary><div id="sysInfo" class="sys"></div></details>
+          <p class="click-next" data-i18n="click_next"></p>
         </div>
-        <footer class="navbar"><span></span><button class="primary" type="button" data-next="preflight" data-i18n="start"></button></footer>
+        <footer class="navbar"><span class="navhint"></span><div class="btns"><button class="primary go" type="button" data-next="preflight" data-i18n="next"></button><button class="secondary" type="button" data-cancel data-i18n="cancel"></button></div></footer>
       </section>
       <section class="screen" data-screen="preflight" aria-labelledby="preTitle" hidden>
         <div class="content">
@@ -54,42 +54,51 @@
           <div id="reqList" class="requirements" aria-live="polite"></div>
           <button class="text-button" id="recheckBtn" type="button" data-i18n="recheck"></button>
         </div>
-        <footer class="navbar"><button class="secondary" type="button" data-next="welcome" data-i18n="back"></button><span class="navhint" id="preHint"></span><button class="primary" type="button" id="preNext" data-next="tweaks" data-i18n="next" disabled></button></footer>
+        <footer class="navbar"><span class="navhint" id="preHint"></span><div class="btns"><button class="secondary back" type="button" data-next="welcome" data-i18n="back"></button><button class="primary go" type="button" id="preNext" data-next="tweaks" data-i18n="next" disabled></button><button class="secondary" type="button" data-cancel data-i18n="cancel"></button></div></footer>
       </section>
       <section class="screen" data-screen="tweaks" aria-labelledby="optionsTitle" hidden>
         <div class="content">
-          <h1 id="optionsTitle" data-i18n="tw_title"></h1><p class="lead" data-i18n="tw_sub"></p>
-          <div class="option-toolbar">
-            <label class="field"><span data-i18n="preset"></span><select id="profileSelect"><option value="custom" data-i18n="prof_custom"></option><option value="balanced" data-i18n="prof_balanced"></option><option value="gaming" data-i18n="prof_gaming"></option></select></label>
-            <label class="field"><span data-i18n="category"></span><select id="categorySelect"></select></label>
+          <h1 id="optionsTitle" data-i18n="cfg_title"></h1>
+          <p class="lead" data-i18n="cfg_sub"></p>
+          <div id="cfgBanner" class="banner info" aria-live="polite"></div>
+          <div class="action-card">
+            <span class="ico-box" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM8.5 12l1.5 1.5 3-3M8.5 17h7"/></svg></span>
+            <div class="action-text"><b data-i18n="cfg_card_title"></b><span data-i18n="cfg_card_sub"></span></div>
+            <button class="secondary" type="button" id="selectBtn"></button>
           </div>
-          <div class="selection-line" id="selectionLine" aria-live="polite"></div>
-          <div id="cardGrid" class="options-list"></div>
+          <p class="warning" id="cfgWarn" hidden></p>
+          <details class="details" id="previewBox" hidden><summary data-i18n="preview_options"></summary><p class="muted" data-i18n="preview_note"></p><button class="secondary" type="button" id="previewBtn" data-i18n="preview"></button><p class="preview-result" id="previewResult" role="status"></p></details>
+          <p class="click-next" data-i18n="click_next"></p>
         </div>
-        <footer class="navbar"><button class="secondary" type="button" data-next="preflight" data-i18n="back"></button><span></span><button class="primary" type="button" id="optNext" data-next="review" data-i18n="review"></button></footer>
-      </section>
-      <section class="screen" data-screen="review" aria-labelledby="reviewTitle" hidden>
-        <div class="content">
-          <h1 id="reviewTitle" data-i18n="rv_title"></h1><p class="lead" data-i18n="rv_sub"></p>
-          <div id="reviewBody"></div>
-          <label class="check-row restart-option"><input type="checkbox" id="autoRestart" /><span data-i18n="auto_restart"></span></label>
-          <details class="details"><summary data-i18n="preview_options"></summary><p class="muted" data-i18n="preview_note"></p><button class="secondary" type="button" id="previewBtn" data-i18n="preview"></button><p class="preview-result" id="previewResult" role="status"></p></details>
-        </div>
-        <footer class="navbar"><button class="secondary" type="button" data-next="tweaks" data-i18n="back"></button><span></span><button class="primary" type="button" data-next="apply" id="applyBtn" data-i18n="apply"></button></footer>
+        <footer class="navbar"><span class="navhint"></span><div class="btns"><button class="secondary back" type="button" data-next="preflight" data-i18n="back"></button><button class="primary go" type="button" id="optNext" data-next="apply" data-i18n="next" disabled></button><button class="secondary" type="button" data-cancel data-i18n="cancel"></button></div></footer>
       </section>
       <section class="screen" data-screen="apply" aria-labelledby="applyTitle" hidden>
-        <div class="content applying-content">
-          <h1 id="applyTitle" data-i18n="ap_title"></h1><p class="lead" data-i18n="ap_note"></p>
-          <div class="progress-heading"><span id="statusLine" role="status"></span><span class="progress-number"><b id="pct">0</b>%</span></div>
-          <div class="progress-track" id="progressTrack" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressFill"></span></div>
-          <p class="muted small" data-i18n="ap_background"></p>
+        <div class="apply-layout">
+          <div class="apply-art" aria-hidden="true"><svg viewBox="0 0 200 170" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><rect x="38" y="14" width="124" height="94" rx="14"/><path d="M84 46 62 68l22 22M116 46l22 22-22 22"/><path d="M14 126h172v10a14 14 0 0 1-14 14H28a14 14 0 0 1-14-14z"/></svg></div>
+          <div class="apply-info content applying-content">
+            <h1 id="applyTitle" data-i18n="ap_title"></h1><p class="lead" data-i18n="ap_note"></p>
+            <div class="progress-heading"><span id="statusLine" role="status"></span><span class="progress-number"><b id="pct">0</b>%</span></div>
+            <div class="progress-track" id="progressTrack" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progressFill"></span></div>
+            <p class="muted small" data-i18n="ap_background"></p>
+            <label class="check-row restart-option"><span data-i18n="auto_restart"></span><input type="checkbox" id="autoRestart" /></label>
+          </div>
         </div>
       </section>
       <section class="screen" data-screen="done" aria-labelledby="doneTitle" hidden>
         <div class="content result-content"><div id="doneBody"></div><p class="finish-status" id="finishStatus" role="status"></p></div>
-        <footer class="navbar"><span></span><button class="primary" type="button" id="finishBtn" data-i18n="finish"></button></footer>
+        <footer class="navbar"><span class="navhint"></span><div class="btns"><button class="primary" type="button" id="finishBtn" data-i18n="finish"></button></div></footer>
       </section>
     </main>
+  </div>
+  <div class="modal-backdrop" id="modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle" data-i18n="cfg_card_title"></h2>
+      <p class="modal-sub" id="modalSub"></p>
+      <div class="option-toolbar" id="presetField"><label class="field"><span data-i18n="preset"></span><select id="profileSelect"><option value="custom" data-i18n="prof_custom"></option><option value="balanced" data-i18n="prof_balanced"></option><option value="gaming" data-i18n="prof_gaming"></option></select></label></div>
+      <div id="cardGrid" class="modal-list"></div>
+      <div class="selection-line" id="selectionLine" aria-live="polite"></div>
+      <div class="modal-foot"><button class="primary" type="button" id="mNext"></button><button class="secondary" type="button" id="mCancel" data-i18n="cancel"></button></div>
+    </div>
   </div>
 </div>
 <script src="diagnostics.js"></script><script src="catalog.js"></script><script src="i18n.js"></script><script src="app.js"></script>
